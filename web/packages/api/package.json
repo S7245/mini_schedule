@@ -1,0 +1,29 @@
+{
+  "name": "@mini-schedule/api",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./client": "./src/client.ts",
+    "./errors": "./src/errors.ts",
+    "./auth": "./src/auth.ts",
+    "./brand": "./src/brand.ts",
+    "./admin": "./src/admin.ts",
+    "./app": "./src/app.ts",
+    "./generated": "./generated/api.d.ts"
+  },
+  "scripts": {
+    "generate": "openapi-typescript ../../backend/docs/swagger.json -o ./generated/api.d.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mini-schedule/types": "workspace:*",
+    "@tanstack/react-query": "^5.62.0",
+    "sonner": "^1.7.0",
+    "zod": "^3.24.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.0",
+    "typescript": "^5.7.0"
+  }
+}

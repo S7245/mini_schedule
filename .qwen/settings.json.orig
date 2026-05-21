@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go *)",
+      "Bash(mkdir *)",
+      "Bash(which *)",
+      "Bash(ls *)",
+      "Bash(cd *)",
+      "Bash(wire)",
+      "Bash(rm *)",
+      "Bash(~/go/bin/wire)",
+      "Bash(psql *)",
+      "Bash(./bin/api-admin)",
+      "Bash(~/go/bin/swag *)",
+      "Bash(lsof *)"
+    ]
+  },
+  "$version": 4
+}

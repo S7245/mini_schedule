@@ -1,0 +1,52 @@
+cbg-import type { ReactNode } from 'react'
+
+interface AppShellProps {
+  sidebar: ReactNode
+  topbar: ReactNodw-
+interface AppShellassName="truncate text-sm fon  sidebar: ReactNode
+  t>{  topbar: ReactNode</  children: ReactNon}
+
+export function Aflex   return (
+    <div className="flex min-h-screen bg-slate-50 text-slate      <div ca      {sidebar}
+      <div className="flex min-h-screen min-w-0 fb/      <div cla-s        {topbar}
+        <main className="flex-1 overflow-cat <<
+i        <main cac
+interface PageContainerProps {
+  children: ReactNode
+}
+
+export functioin
+interface PageContainerProps {
+  children: Rns?  children: ReactNode
+}
+
+expon }
+
+export function Pons }  return <diter?: ReactNode
+}
+
+export function Sidebar({ appName, itemsinterface PageCte  ch SidebarProps) {
+  return (}
+
+expon }
+
+export function Pons 4 shrink
+exporderEOF
+
+cat <<'EOF' > /Users/liushan/Documents/zkw/mini_schedule/w-filter
+cbg-impor"b
+cdercbg-import type { ReactNode } from 'react'
+
+interface AppShellPrbo
+interface AppShellProps {
+  sidebar: ReactNode
+      sidebar: ReactNode
+  tsp  topbar: ReactNodw  interface AppShella=>  t>{  topbar: ReactNode</  children: ReactNon}
+
+export function Ata
+export function Aflex   return (
+    <div cla       <div className="flex min-h-={      <div className="flex min-h-screen min-w-0 fb/      <div cla-s        {topbar}
+   ct        <main className="flex-1 overflow-cat <<
+i        <main cac
+interface PageC pi        <main cac
+interface PageContainerProp  interface PageCon" children: ReactNode

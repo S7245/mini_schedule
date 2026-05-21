@@ -1,0 +1,37 @@
+{
+  "name": "@mini-schedule/admin-system",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./models/nav": "./src/models/nav.ts",
+    "./models/page-meta": "./src/models/page-meta.ts",
+    "./shell/app-shell": "./src/shell/app-shell.tsx",
+    "./shell/protected-app-layout": "./src/shell/protected-app-layout.tsx",
+    "./templates/login-shell": "./src/templates/login-shell.tsx",
+    "./templates/dashboard-page-template": "./src/templates/dashboard-page-template.tsx",
+    "./templates/resource-list-page": "./src/templates/resource-list-page.tsx",
+    "./components/page-header": "./src/components/page-header.tsx",
+    "./components/stat-card": "./src/components/stat-card.tsx",
+    "./components/section-card": "./src/components/section-card.tsx",
+    "./components/status-badge": "./src/components/status-badge.tsx",
+    "./components/filter-bar": "./src/components/filter-bar.tsx",
+    "./components/data-table": "./src/components/data-table.tsx",
+    "./components/empty-state": "./src/components/empty-state.tsx",
+    "./components/loading-state": "./src/components/loading-state.tsx"
+  },
+  "peerDependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
