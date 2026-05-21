@@ -1,4 +1,4 @@
-import { Building2, LayoutDashboard, Shield } from 'lucide-react'
+import { Building2, Inbox, LayoutDashboard, Shield } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
 
 export const adminNavItems: BackofficeNavItem[] = [
@@ -16,5 +16,11 @@ export const adminNavItems: BackofficeNavItem[] = [
     href: '/admins',
     label: '管理员管理',
     icon: <Shield className="h-4 w-4" />,
+  },
+  {
+    href: '/messages',
+    label: '消息中心',
+    icon: <Inbox className="h-4 w-4" />,
+    badge: '4',
   },
 ]

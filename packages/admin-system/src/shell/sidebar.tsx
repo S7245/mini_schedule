@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ChevronRight, X } from 'lucide-react'
 import type { BackofficeNavGroup, BackofficeNavItem } from '../models/nav'
+import { isBackofficeNavItemActive } from '../models/nav'
 import { cn } from '../lib/cn'
 
 interface SidebarProps {
@@ -15,14 +16,6 @@ interface SidebarProps {
   mobileOpen?: boolean
   onMobileOpenChange?: (open: boolean) => void
   footer?: ReactNode
-}
-
-function isActivePath(pathname: string, item: BackofficeNavItem): boolean {
-  return (
-    pathname === item.href ||
-    pathname.startsWith(`${item.href}/`) ||
-    !!item.items?.some((child) => isActivePath(pathname, child))
-  )
 }
 
 function NavLink({
@@ -38,7 +31,7 @@ function NavLink({
   nested?: boolean
   onNavigate?: () => void
 }) {
-  const active = isActivePath(pathname, item)
+  const active = isBackofficeNavItemActive(pathname, item)
   const hasChildren = !!item.items?.length
 
   return (

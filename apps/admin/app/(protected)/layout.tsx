@@ -4,19 +4,13 @@ import type { ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAdminLogout } from '@mini-schedule/api/admin'
 import { useAuthStore } from '@mini-schedule/api/auth'
+import { getBackofficePageLabel } from '@mini-schedule/admin-system'
 import { ProtectedAppLayout } from '@mini-schedule/admin-system/shell/protected-app-layout'
 import { AdminGuard } from '@/components/layout/admin-guard'
 import { adminNavItems } from '@/config/nav'
 
 interface ProtectedLayoutProps {
   children: ReactNode
-}
-
-function getTopbarTitle(pathname: string): string {
-  return (
-    adminNavItems.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
-      ?.label ?? '平台管理后台'
-  )
 }
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
@@ -42,7 +36,11 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         appName="平台管理后台"
         navItems={adminNavItems}
         pathname={pathname}
-        topbarTitle={getTopbarTitle(pathname)}
+        topbarTitle={getBackofficePageLabel(
+          pathname,
+          adminNavItems,
+          '平台管理后台',
+        )}
         searchPlaceholder="搜索品牌或管理员"
         userLabel={user?.display_name ?? '平台管理员'}
         userDescription={user?.role ?? 'platform'}

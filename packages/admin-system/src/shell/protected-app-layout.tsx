@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import type { BackofficeNavGroup, BackofficeNavItem } from '../models/nav'
+import { getBackofficeBreadcrumbs } from '../models/nav'
 import { AppShell } from './app-shell'
 import { PageContainer } from './page-container'
 import { Sidebar } from './sidebar'
@@ -39,13 +40,6 @@ function writeSidebarCookie(open: boolean) {
   document.cookie = `${SIDEBAR_COOKIE_NAME}=${open ? 'expanded' : 'collapsed'}; path=/; max-age=604800`
 }
 
-function buildBreadcrumbs(pathname: string, navItems: BackofficeNavItem[], title: string) {
-  const flatItems = navItems.flatMap((item) => [item, ...(item.items ?? [])])
-  const matched = flatItems.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
-
-  return ['后台', matched?.label ?? title]
-}
-
 export function ProtectedAppLayout({
   appName,
   navItems,
@@ -75,8 +69,8 @@ export function ProtectedAppLayout({
   }
 
   const breadcrumbs = useMemo(
-    () => buildBreadcrumbs(pathname, navItems, topbarTitle),
-    [navItems, pathname, topbarTitle]
+    () => getBackofficeBreadcrumbs(pathname, navItems, topbarTitle),
+    [navItems, pathname, topbarTitle],
   )
 
   return (

@@ -18,7 +18,8 @@
     "./components/filter-bar": "./src/components/filter-bar.tsx",
     "./components/data-table": "./src/components/data-table.tsx",
     "./components/empty-state": "./src/components/empty-state.tsx",
-    "./components/loading-state": "./src/components/loading-state.tsx"
+    "./components/loading-state": "./src/components/loading-state.tsx",
+    "./components/message-center": "./src/components/message-center.tsx"
   },
   "peerDependencies": {
     "next": "^15.1.0",

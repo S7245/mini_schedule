@@ -1,0 +1,37 @@
+import {
+  BookOpen,
+  Dumbbell,
+  Inbox,
+  LayoutDashboard,
+  UsersRound,
+} from 'lucide-react'
+import type { BackofficeNavItem } from '@mini-schedule/admin-system'
+
+export const brandNavItems: BackofficeNavItem[] = [
+  {
+    href: '/dashboard',
+    label: '概览',
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    href: '/users',
+    label: '学员管理',
+    icon: <UsersRound className="h-4 w-4" />,
+  },
+  {
+    href: '/courses',
+    label: '课程管理',
+    icon: <BookOpen className="h-4 w-4" />,
+  },
+  {
+    href: '/trainings',
+    label: '训练记录',
+    icon: <Dumbbell className="h-4 w-4" />,
+  },
+  {
+    href: '/messages',
+    label: '消息中心',
+    icon: <Inbox className="h-4 w-4" />,
+    badge: '3',
+  },
+]
