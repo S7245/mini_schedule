@@ -19,6 +19,7 @@ import { cn } from '../lib/cn'
 import {
   applyMessageCenterQueueAction,
   getMessageCenterAssignees,
+  getMessageCenterComposerState,
   getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
@@ -138,12 +139,14 @@ export function MessageCenter({
   )
 
   const selectMessage = (message: MessageCenterItem | undefined) => {
+    const composerState = getMessageCenterComposerState(message, labelOptions)
+
     setSelectedId(message?.id)
-    setDraft(message?.suggestedReply ?? '')
-    setHandoffAssignee(message?.assignee ?? '')
-    setTriageLabel(message?.labels[0] ?? labelOptions[0] ?? '')
-    setInternalNote('')
-    setActivityMessage('草稿未发送')
+    setDraft(composerState.draft)
+    setHandoffAssignee(composerState.handoffAssignee)
+    setTriageLabel(composerState.triageLabel)
+    setInternalNote(composerState.internalNote)
+    setActivityMessage(composerState.activityMessage)
   }
 
   const selectFirstMatchingMessage = (nextFilters: MessageCenterFilters) => {
@@ -174,10 +177,8 @@ export function MessageCenter({
     setSelectedId(result.view.selectedMessage?.id)
     setDraft(result.draft)
     setHandoffAssignee(result.handoffAssignee)
-    setTriageLabel(
-      result.view.selectedMessage?.labels[0] ?? labelOptions[0] ?? '',
-    )
-    setInternalNote('')
+    setTriageLabel(result.triageLabel)
+    setInternalNote(result.internalNote)
     setActivityMessage(result.activityMessage)
   }
 

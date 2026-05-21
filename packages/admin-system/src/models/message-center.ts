@@ -75,6 +75,16 @@ export interface MessageCenterQueueActionResult {
   view: MessageCenterQueueView
   draft: string
   handoffAssignee: string
+  triageLabel: string
+  internalNote: string
+  activityMessage: string
+}
+
+export interface MessageCenterComposerState {
+  draft: string
+  handoffAssignee: string
+  triageLabel: string
+  internalNote: string
   activityMessage: string
 }
 
@@ -172,6 +182,20 @@ export function getMessageCenterQueueView(
     selectedMessage:
       filteredMessages.find((message) => message.id === selectedId) ??
       filteredMessages[0],
+  }
+}
+
+export function getMessageCenterComposerState(
+  selectedMessage: MessageCenterItem | undefined,
+  labelOptions: string[],
+  activityMessage = '草稿未发送',
+): MessageCenterComposerState {
+  return {
+    draft: selectedMessage?.suggestedReply ?? '',
+    handoffAssignee: selectedMessage?.assignee ?? '',
+    triageLabel: selectedMessage?.labels[0] ?? labelOptions[0] ?? '',
+    internalNote: '',
+    activityMessage,
   }
 }
 
@@ -290,18 +314,21 @@ export function applyMessageCenterQueueAction(
     update,
   )
   const view = getMessageCenterQueueView(nextMessages, filters, selectedId)
-
-  return {
-    messages: nextMessages,
-    view,
-    draft: view.selectedMessage?.suggestedReply ?? '',
-    handoffAssignee: view.selectedMessage?.assignee ?? '',
-    activityMessage: getMessageCenterActivityMessage(
+  const composerState = getMessageCenterComposerState(
+    view.selectedMessage,
+    getMessageCenterLabels(nextMessages),
+    getMessageCenterActivityMessage(
       update.action,
       nextMessages.find((message) => message.id === selectedId),
       update.label,
       update.note,
     ),
+  )
+
+  return {
+    messages: nextMessages,
+    view,
+    ...composerState,
   }
 }
 

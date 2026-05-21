@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   applyMessageCenterQueueAction,
   filterMessageCenterItems,
+  getMessageCenterComposerState,
   getMessageCenterAssignees,
   getMessageCenterLabels,
   getMessageCenterQueueView,
@@ -164,6 +165,27 @@ test('message center queue view falls back when selection is filtered out', () =
   assert.equal(view.selectedMessage?.id, 'brand-audit')
 })
 
+test('message center composer state follows selected queue messages', () => {
+  assert.deepEqual(
+    getMessageCenterComposerState(messages[1], ['内容异常', '系统通知']),
+    {
+      draft: '我们会核对封面地址。',
+      handoffAssignee: '唐雨',
+      triageLabel: '内容异常',
+      internalNote: '',
+      activityMessage: '草稿未发送',
+    },
+  )
+
+  assert.deepEqual(getMessageCenterComposerState(undefined, ['系统通知']), {
+    draft: '',
+    handoffAssignee: '',
+    triageLabel: '系统通知',
+    internalNote: '',
+    activityMessage: '草稿未发送',
+  })
+})
+
 test('message center can move unread messages into the open queue', () => {
   const updated = updateMessageCenterQueueItem(messages, 'brand-audit', {
     action: 'mark-read',
@@ -291,5 +313,7 @@ test('message center action result keeps the composer aligned with the visible q
   assert.equal(result.view.selectedMessage?.id, 'new-brand-note')
   assert.equal(result.draft, '我们会继续跟进补充材料。')
   assert.equal(result.handoffAssignee, '周然')
+  assert.equal(result.triageLabel, '入驻审核')
+  assert.equal(result.internalNote, '')
   assert.equal(result.activityMessage, '消息已转入处理中')
 })
