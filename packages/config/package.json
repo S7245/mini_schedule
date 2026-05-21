@@ -1,0 +1,13 @@
+{
+  "name": "@mini-schedule/config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./tokens": "./src/tokens.ts",
+    "./eslint": "./eslint.js"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "tailwindcss": "^4.1.0"
+  }
+}
