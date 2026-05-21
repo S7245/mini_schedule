@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/cn'
 import {
+  getMessageCenterAssignees,
   getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
@@ -94,6 +95,9 @@ export function MessageCenter({
     messages[0]?.id,
   )
   const [draft, setDraft] = useState(messages[0]?.suggestedReply ?? '')
+  const [handoffAssignee, setHandoffAssignee] = useState(
+    messages[0]?.assignee ?? '',
+  )
   const [activityMessage, setActivityMessage] = useState('草稿未发送')
   const filters = useMemo<MessageCenterFilters>(
     () => ({
@@ -113,6 +117,10 @@ export function MessageCenter({
     () => getMessageCenterOwners(queueMessages),
     [queueMessages],
   )
+  const assigneeOptions = useMemo(
+    () => getMessageCenterAssignees(queueMessages),
+    [queueMessages],
+  )
   const { filteredMessages, selectedMessage } = useMemo(
     () => getMessageCenterQueueView(queueMessages, filters, selectedId),
     [filters, queueMessages, selectedId],
@@ -121,6 +129,7 @@ export function MessageCenter({
   const selectMessage = (message: MessageCenterItem | undefined) => {
     setSelectedId(message?.id)
     setDraft(message?.suggestedReply ?? '')
+    setHandoffAssignee(message?.assignee ?? '')
     setActivityMessage('草稿未发送')
   }
 
@@ -140,6 +149,7 @@ export function MessageCenter({
       {
         action,
         actor: message.assignee,
+        assignee: handoffAssignee,
         body: draft,
       },
     )
@@ -152,12 +162,15 @@ export function MessageCenter({
     setQueueMessages(nextMessages)
     setSelectedId(visibleMessage?.id)
     setDraft(visibleMessage?.suggestedReply ?? '')
+    setHandoffAssignee(visibleMessage?.assignee ?? '')
     const nextActivityMessage =
       action === 'reply'
         ? '回复已记录到处理时间线'
         : action === 'resolve'
           ? '消息已标记解决'
-          : '消息已转入处理中'
+          : action === 'assign'
+            ? `消息已转交给 ${visibleMessage?.assignee ?? handoffAssignee}`
+            : '消息已转入处理中'
     setActivityMessage(nextActivityMessage)
   }
 
@@ -434,7 +447,34 @@ export function MessageCenter({
                 <p className="text-xs text-muted-foreground">
                   {activityMessage}
                 </p>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground">
+                    <UserRound className="size-4 text-muted-foreground" />
+                    <select
+                      className="h-full bg-transparent text-sm outline-none"
+                      value={handoffAssignee}
+                      onChange={(event) =>
+                        setHandoffAssignee(event.target.value)
+                      }
+                    >
+                      {assigneeOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={
+                      selectedMessage.status === 'resolved' ||
+                      handoffAssignee === selectedMessage.assignee
+                    }
+                    onClick={() => applyQueueAction('assign', selectedMessage)}
+                  >
+                    转交
+                  </button>
                   <button
                     type="button"
                     className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"

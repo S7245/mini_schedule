@@ -49,11 +49,16 @@ export interface MessageCenterQueueView {
 }
 
 export type MessageCenterStatusCounts = Record<MessageStatus | 'all', number>
-export type MessageCenterQueueAction = 'mark-read' | 'reply' | 'resolve'
+export type MessageCenterQueueAction =
+  | 'mark-read'
+  | 'reply'
+  | 'resolve'
+  | 'assign'
 
 export interface MessageCenterQueueUpdate {
   action: MessageCenterQueueAction
   actor?: string
+  assignee?: string
   body?: string
   at?: string
 }
@@ -79,6 +84,14 @@ export function getMessageCenterStatusCounts(
 export function getMessageCenterOwners(messages: MessageCenterItem[]): string[] {
   return Array.from(
     new Set(messages.map((message) => message.owner).filter(Boolean)),
+  )
+}
+
+export function getMessageCenterAssignees(
+  messages: MessageCenterItem[],
+): string[] {
+  return Array.from(
+    new Set(messages.map((message) => message.assignee).filter(Boolean)),
   )
 }
 
@@ -136,7 +149,13 @@ export function getMessageCenterQueueView(
 export function updateMessageCenterQueueItem(
   messages: MessageCenterItem[],
   id: string,
-  { action, actor = '当前处理人', body = '', at = '刚刚' }: MessageCenterQueueUpdate,
+  {
+    action,
+    actor = '当前处理人',
+    assignee,
+    body = '',
+    at = '刚刚',
+  }: MessageCenterQueueUpdate,
 ): MessageCenterItem[] {
   return messages.map((message) => {
     if (message.id !== id) {
@@ -159,6 +178,20 @@ export function updateMessageCenterQueueItem(
         ...message,
         status: 'resolved',
         timeline: [...message.timeline, { label: `${actor} 标记已解决`, at }],
+      }
+    }
+
+    if (action === 'assign') {
+      const nextAssignee = assignee?.trim() || message.assignee
+
+      return {
+        ...message,
+        assignee: nextAssignee,
+        status: message.status === 'resolved' ? 'resolved' : 'open',
+        timeline: [
+          ...message.timeline,
+          { label: `${actor} 转交给 ${nextAssignee}`, at },
+        ],
       }
     }
 

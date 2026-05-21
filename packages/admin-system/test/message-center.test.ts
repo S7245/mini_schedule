@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   filterMessageCenterItems,
+  getMessageCenterAssignees,
   getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
@@ -84,6 +85,14 @@ test('message center exposes stable owner filters', () => {
   ])
 })
 
+test('message center exposes stable assignee options', () => {
+  assert.deepEqual(getMessageCenterAssignees(messages), [
+    '林晨',
+    '唐雨',
+    '系统',
+  ])
+})
+
 test('message center filters by status priority owner and query', () => {
   const filtered = filterMessageCenterItems(messages, {
     status: 'open',
@@ -155,4 +164,27 @@ test('message center can resolve open messages', () => {
 
   assert.equal(updated[1]?.status, 'resolved')
   assert.equal(updated[1]?.timeline.at(-1)?.label, '唐雨 标记已解决')
+})
+
+test('message center can hand off active messages to another assignee', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'brand-audit', {
+    action: 'assign',
+    actor: '林晨',
+    assignee: '唐雨',
+  })
+
+  assert.equal(updated[0]?.status, 'open')
+  assert.equal(updated[0]?.assignee, '唐雨')
+  assert.equal(updated[0]?.timeline.at(-1)?.label, '林晨 转交给 唐雨')
+})
+
+test('message center handoff keeps resolved messages closed', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'invoice', {
+    action: 'assign',
+    actor: '系统',
+    assignee: '林晨',
+  })
+
+  assert.equal(updated[2]?.status, 'resolved')
+  assert.equal(updated[2]?.assignee, '林晨')
 })
