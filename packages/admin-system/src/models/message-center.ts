@@ -63,6 +63,14 @@ export interface MessageCenterQueueUpdate {
   at?: string
 }
 
+export interface MessageCenterQueueActionResult {
+  messages: MessageCenterItem[]
+  view: MessageCenterQueueView
+  draft: string
+  handoffAssignee: string
+  activityMessage: string
+}
+
 export function getMessageCenterStatusCounts(
   messages: MessageCenterItem[],
 ): MessageCenterStatusCounts {
@@ -209,4 +217,48 @@ export function updateMessageCenterQueueItem(
       timeline: [...message.timeline, { label: replyLabel, at }],
     }
   })
+}
+
+export function applyMessageCenterQueueAction(
+  messages: MessageCenterItem[],
+  selectedId: string,
+  filters: MessageCenterFilters,
+  update: MessageCenterQueueUpdate,
+): MessageCenterQueueActionResult {
+  const nextMessages = updateMessageCenterQueueItem(
+    messages,
+    selectedId,
+    update,
+  )
+  const view = getMessageCenterQueueView(nextMessages, filters, selectedId)
+
+  return {
+    messages: nextMessages,
+    view,
+    draft: view.selectedMessage?.suggestedReply ?? '',
+    handoffAssignee: view.selectedMessage?.assignee ?? '',
+    activityMessage: getMessageCenterActivityMessage(
+      update.action,
+      nextMessages.find((message) => message.id === selectedId),
+    ),
+  }
+}
+
+function getMessageCenterActivityMessage(
+  action: MessageCenterQueueAction,
+  updatedMessage: MessageCenterItem | undefined,
+): string {
+  if (action === 'reply') {
+    return '回复已记录到处理时间线'
+  }
+
+  if (action === 'resolve') {
+    return '消息已标记解决'
+  }
+
+  if (action === 'assign') {
+    return `消息已转交给 ${updatedMessage?.assignee ?? ''}`
+  }
+
+  return '消息已转入处理中'
 }

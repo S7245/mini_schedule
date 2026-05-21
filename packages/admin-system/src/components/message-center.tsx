@@ -15,11 +15,11 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/cn'
 import {
+  applyMessageCenterQueueAction,
   getMessageCenterAssignees,
   getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
-  updateMessageCenterQueueItem,
 } from '../models/message-center'
 import type {
   MessageCenterFilters,
@@ -143,9 +143,10 @@ export function MessageCenter({
     action: MessageCenterQueueAction,
     message: MessageCenterItem,
   ) => {
-    const nextMessages = updateMessageCenterQueueItem(
+    const result = applyMessageCenterQueueAction(
       queueMessages,
       message.id,
+      filters,
       {
         action,
         actor: message.assignee,
@@ -153,25 +154,12 @@ export function MessageCenter({
         body: draft,
       },
     )
-    const visibleMessage = getMessageCenterQueueView(
-      nextMessages,
-      filters,
-      message.id,
-    ).selectedMessage
 
-    setQueueMessages(nextMessages)
-    setSelectedId(visibleMessage?.id)
-    setDraft(visibleMessage?.suggestedReply ?? '')
-    setHandoffAssignee(visibleMessage?.assignee ?? '')
-    const nextActivityMessage =
-      action === 'reply'
-        ? '回复已记录到处理时间线'
-        : action === 'resolve'
-          ? '消息已标记解决'
-          : action === 'assign'
-            ? `消息已转交给 ${visibleMessage?.assignee ?? handoffAssignee}`
-            : '消息已转入处理中'
-    setActivityMessage(nextActivityMessage)
+    setQueueMessages(result.messages)
+    setSelectedId(result.view.selectedMessage?.id)
+    setDraft(result.draft)
+    setHandoffAssignee(result.handoffAssignee)
+    setActivityMessage(result.activityMessage)
   }
 
   return (

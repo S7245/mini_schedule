@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  applyMessageCenterQueueAction,
   filterMessageCenterItems,
   getMessageCenterAssignees,
   getMessageCenterQueueView,
@@ -187,4 +188,32 @@ test('message center handoff keeps resolved messages closed', () => {
 
   assert.equal(updated[2]?.status, 'resolved')
   assert.equal(updated[2]?.assignee, '林晨')
+})
+
+test('message center action result keeps the composer aligned with the visible queue', () => {
+  const nextUnread: MessageCenterItem = {
+    ...messages[0],
+    id: 'new-brand-note',
+    title: '新品牌资料补充',
+    assignee: '周然',
+    suggestedReply: '我们会继续跟进补充材料。',
+    timeline: [{ label: '品牌补充资料', at: '10:08' }],
+  }
+
+  const result = applyMessageCenterQueueAction(
+    [messages[0], nextUnread],
+    'brand-audit',
+    { status: 'unread' },
+    {
+      action: 'mark-read',
+      actor: '林晨',
+      at: '刚刚',
+    },
+  )
+
+  assert.equal(result.messages[0]?.status, 'open')
+  assert.equal(result.view.selectedMessage?.id, 'new-brand-note')
+  assert.equal(result.draft, '我们会继续跟进补充材料。')
+  assert.equal(result.handoffAssignee, '周然')
+  assert.equal(result.activityMessage, '消息已转入处理中')
 })
