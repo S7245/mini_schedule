@@ -2,6 +2,9 @@
   "name": "@mini-schedule/admin-system",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "test": "tsc -p tsconfig.test.json && node --test ../../.test-build/admin-system/test/*.test.js"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./models/nav": "./src/models/nav.ts",

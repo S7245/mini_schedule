@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "rootDir": ".",
+    "outDir": "../../.test-build/admin-system"
+  },
+  "include": ["src/models/**/*.ts", "test/**/*.ts"]
+}
