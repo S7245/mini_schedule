@@ -12,6 +12,11 @@ export interface MessageCenterReplyTemplate {
   body: string
 }
 
+export interface MessageCenterFollowUpOption {
+  label: string
+  value: string
+}
+
 export interface MessageCenterTimelineItem {
   label: string
   at: string
@@ -32,6 +37,7 @@ export interface MessageCenterItem {
   assignee: string
   labels: string[]
   internalNotes: string[]
+  followUpAt: string
   slaLabel: string
   nextStep: string
   suggestedReply: string
@@ -43,6 +49,7 @@ export interface MessageCenterFilters {
   priority?: MessagePriority | 'all'
   owner?: string
   label?: string
+  followUp?: 'all' | 'scheduled' | 'unscheduled'
   query?: string
 }
 
@@ -59,6 +66,7 @@ export type MessageCenterQueueAction =
   | 'assign'
   | 'label'
   | 'note'
+  | 'schedule-follow-up'
 
 export interface MessageCenterQueueUpdate {
   action: MessageCenterQueueAction
@@ -66,6 +74,7 @@ export interface MessageCenterQueueUpdate {
   assignee?: string
   label?: string
   note?: string
+  followUpAt?: string
   body?: string
   at?: string
 }
@@ -77,6 +86,7 @@ export interface MessageCenterQueueActionResult {
   handoffAssignee: string
   triageLabel: string
   internalNote: string
+  followUpAt: string
   activityMessage: string
 }
 
@@ -85,6 +95,7 @@ export interface MessageCenterComposerState {
   handoffAssignee: string
   triageLabel: string
   internalNote: string
+  followUpAt: string
   activityMessage: string
 }
 
@@ -106,7 +117,9 @@ export function getMessageCenterStatusCounts(
   )
 }
 
-export function getMessageCenterOwners(messages: MessageCenterItem[]): string[] {
+export function getMessageCenterOwners(
+  messages: MessageCenterItem[],
+): string[] {
   return Array.from(
     new Set(messages.map((message) => message.owner).filter(Boolean)),
   )
@@ -120,8 +133,18 @@ export function getMessageCenterAssignees(
   )
 }
 
-export function getMessageCenterLabels(messages: MessageCenterItem[]): string[] {
+export function getMessageCenterLabels(
+  messages: MessageCenterItem[],
+): string[] {
   return Array.from(new Set(messages.flatMap((message) => message.labels)))
+}
+
+export function getMessageCenterFollowUpOptions(
+  messages: MessageCenterItem[],
+): string[] {
+  return Array.from(
+    new Set(messages.map((message) => message.followUpAt).filter(Boolean)),
+  )
 }
 
 export function filterMessageCenterItems(
@@ -131,6 +154,7 @@ export function filterMessageCenterItems(
     priority = 'all',
     owner = 'all',
     label = 'all',
+    followUp = 'all',
     query = '',
   }: MessageCenterFilters = {},
 ): MessageCenterItem[] {
@@ -138,10 +162,13 @@ export function filterMessageCenterItems(
 
   return messages.filter((message) => {
     const matchesStatus = status === 'all' || message.status === status
-    const matchesPriority =
-      priority === 'all' || message.priority === priority
+    const matchesPriority = priority === 'all' || message.priority === priority
     const matchesOwner = owner === 'all' || message.owner === owner
     const matchesLabel = label === 'all' || message.labels.includes(label)
+    const matchesFollowUp =
+      followUp === 'all' ||
+      (followUp === 'scheduled' && message.followUpAt.length > 0) ||
+      (followUp === 'unscheduled' && message.followUpAt.length === 0)
     const matchesQuery =
       normalizedQuery.length === 0 ||
       [
@@ -153,6 +180,8 @@ export function filterMessageCenterItems(
         message.audience,
         message.owner,
         message.assignee,
+        message.followUpAt,
+        message.nextStep,
         ...message.internalNotes,
         ...message.labels,
       ]
@@ -165,6 +194,7 @@ export function filterMessageCenterItems(
       matchesPriority &&
       matchesOwner &&
       matchesLabel &&
+      matchesFollowUp &&
       matchesQuery
     )
   })
@@ -195,6 +225,7 @@ export function getMessageCenterComposerState(
     handoffAssignee: selectedMessage?.assignee ?? '',
     triageLabel: selectedMessage?.labels[0] ?? labelOptions[0] ?? '',
     internalNote: '',
+    followUpAt: selectedMessage?.followUpAt ?? '',
     activityMessage,
   }
 }
@@ -208,6 +239,7 @@ export function updateMessageCenterQueueItem(
     assignee,
     label,
     note,
+    followUpAt,
     body = '',
     at = '刚刚',
   }: MessageCenterQueueUpdate,
@@ -221,10 +253,7 @@ export function updateMessageCenterQueueItem(
       return {
         ...message,
         status: message.status === 'unread' ? 'open' : message.status,
-        timeline: [
-          ...message.timeline,
-          { label: `${actor} 标记为处理中`, at },
-        ],
+        timeline: [...message.timeline, { label: `${actor} 标记为处理中`, at }],
       }
     }
 
@@ -279,9 +308,24 @@ export function updateMessageCenterQueueItem(
         ...message,
         internalNotes: [...message.internalNotes, nextNote],
         status: message.status === 'resolved' ? 'resolved' : 'open',
+        timeline: [...message.timeline, { label: `${actor} 添加内部备注`, at }],
+      }
+    }
+
+    if (action === 'schedule-follow-up') {
+      const nextFollowUpAt = followUpAt?.trim()
+
+      if (!nextFollowUpAt || nextFollowUpAt === message.followUpAt) {
+        return message
+      }
+
+      return {
+        ...message,
+        followUpAt: nextFollowUpAt,
+        status: message.status === 'resolved' ? 'resolved' : 'open',
         timeline: [
           ...message.timeline,
-          { label: `${actor} 添加内部备注`, at },
+          { label: `${actor} 安排 ${nextFollowUpAt} 跟进`, at },
         ],
       }
     }
@@ -322,6 +366,7 @@ export function applyMessageCenterQueueAction(
       nextMessages.find((message) => message.id === selectedId),
       update.label,
       update.note,
+      update.followUpAt,
     ),
   )
 
@@ -337,6 +382,7 @@ function getMessageCenterActivityMessage(
   updatedMessage: MessageCenterItem | undefined,
   label?: string,
   note?: string,
+  followUpAt?: string,
 ): string {
   if (action === 'reply') {
     return '回复已记录到处理时间线'
@@ -356,6 +402,10 @@ function getMessageCenterActivityMessage(
 
   if (action === 'note') {
     return note?.trim() ? '内部备注已记录' : '备注未变更'
+  }
+
+  if (action === 'schedule-follow-up') {
+    return followUpAt?.trim() ? `已安排 ${followUpAt} 跟进` : '跟进时间未变更'
   }
 
   return '消息已转入处理中'

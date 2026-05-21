@@ -42,9 +42,8 @@ const messages: MessageCenterItem[] = [
     owner: '教练组',
     assignee: '陈教练',
     labels: ['学员咨询', '课程适配'],
-    internalNotes: [
-      '先查看近两周训练记录，再推荐低冲击替代课程。',
-    ],
+    internalNotes: ['先查看近两周训练记录，再推荐低冲击替代课程。'],
+    followUpAt: '今日 16:00',
     slaLabel: '今日内',
     nextStep: '查看学员近期训练记录，确认课程难度后回复可替代课程和训练频次。',
     suggestedReply:
@@ -68,9 +67,8 @@ const messages: MessageCenterItem[] = [
     owner: '课程运营',
     assignee: '许宁',
     labels: ['内容补全', '课程封面'],
-    internalNotes: [
-      '补图后检查学员端列表和课程详情页是否都能加载。',
-    ],
+    internalNotes: ['补图后检查学员端列表和课程详情页是否都能加载。'],
+    followUpAt: '',
     slaLabel: '2 个工作日',
     nextStep: '进入课程详情页补充 cover_url，确认图片可公开访问后保存。',
     suggestedReply:
@@ -94,9 +92,8 @@ const messages: MessageCenterItem[] = [
     owner: '运营组',
     assignee: '刘可',
     labels: ['训练跟进', '活跃预警'],
-    internalNotes: [
-      '优先联系最近有购买记录但无训练记录的学员。',
-    ],
+    internalNotes: ['优先联系最近有购买记录但无训练记录的学员。'],
+    followUpAt: '今日 18:00',
     slaLabel: '今日内',
     nextStep: '筛选训练记录列表，联系缺失记录学员确认训练状态并补齐必要记录。',
     suggestedReply:
@@ -120,9 +117,8 @@ const messages: MessageCenterItem[] = [
     owner: '系统',
     assignee: '系统',
     labels: ['系统通知', '资料同步'],
-    internalNotes: [
-      '平台资料同步成功，后续仅在联系人变更时跟进。',
-    ],
+    internalNotes: ['平台资料同步成功，后续仅在联系人变更时跟进。'],
+    followUpAt: '',
     slaLabel: '无需处理',
     nextStep: '无需人工处理，如联系人信息变化再联系平台运营更新。',
     suggestedReply:

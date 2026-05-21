@@ -20,6 +20,7 @@ import {
   applyMessageCenterQueueAction,
   getMessageCenterAssignees,
   getMessageCenterComposerState,
+  getMessageCenterFollowUpOptions,
   getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
@@ -27,6 +28,7 @@ import {
 } from '../models/message-center'
 import type {
   MessageCenterFilters,
+  MessageCenterFollowUpOption,
   MessageCenterItem,
   MessageCenterMetric,
   MessageCenterQueueAction,
@@ -37,6 +39,7 @@ import type {
 
 export type {
   MessageCenterItem,
+  MessageCenterFollowUpOption,
   MessageCenterMetric,
   MessageCenterQueueAction,
   MessageCenterReplyTemplate,
@@ -49,6 +52,7 @@ interface MessageCenterProps {
   metrics: MessageCenterMetric[]
   messages: MessageCenterItem[]
   replyTemplates: MessageCenterReplyTemplate[]
+  followUpOptions?: MessageCenterFollowUpOption[]
   scopeLabel: string
 }
 
@@ -85,6 +89,11 @@ const priorityTone: Record<MessagePriority, string> = {
 }
 
 export function MessageCenter({
+  followUpOptions = [
+    { label: '今日 18:00', value: '今日 18:00' },
+    { label: '明日 10:00', value: '明日 10:00' },
+    { label: '下个工作日', value: '下个工作日' },
+  ],
   metrics,
   messages,
   replyTemplates,
@@ -95,6 +104,8 @@ export function MessageCenter({
   const [priority, setPriority] = useState<MessagePriority | 'all'>('all')
   const [owner, setOwner] = useState('all')
   const [label, setLabel] = useState('all')
+  const [followUp, setFollowUp] =
+    useState<NonNullable<MessageCenterFilters['followUp']>>('all')
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | undefined>(
     messages[0]?.id,
@@ -105,6 +116,9 @@ export function MessageCenter({
   )
   const [triageLabel, setTriageLabel] = useState(messages[0]?.labels[0] ?? '')
   const [internalNote, setInternalNote] = useState('')
+  const [followUpAt, setFollowUpAt] = useState(
+    messages[0]?.followUpAt || followUpOptions[0]?.value || '',
+  )
   const [activityMessage, setActivityMessage] = useState('草稿未发送')
   const filters = useMemo<MessageCenterFilters>(
     () => ({
@@ -112,9 +126,10 @@ export function MessageCenter({
       priority,
       owner,
       label,
+      followUp,
       query,
     }),
-    [label, owner, priority, query, status],
+    [followUp, label, owner, priority, query, status],
   )
 
   const statusCounts = useMemo(
@@ -133,6 +148,22 @@ export function MessageCenter({
     () => getMessageCenterLabels(queueMessages),
     [queueMessages],
   )
+  const queuedFollowUpOptions = useMemo(
+    () => getMessageCenterFollowUpOptions(queueMessages),
+    [queueMessages],
+  )
+  const scheduleOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          [
+            ...followUpOptions,
+            ...queuedFollowUpOptions.map((value) => ({ label: value, value })),
+          ].map((item) => [item.value, item]),
+        ).values(),
+      ),
+    [followUpOptions, queuedFollowUpOptions],
+  )
   const { filteredMessages, selectedMessage } = useMemo(
     () => getMessageCenterQueueView(queueMessages, filters, selectedId),
     [filters, queueMessages, selectedId],
@@ -146,6 +177,7 @@ export function MessageCenter({
     setHandoffAssignee(composerState.handoffAssignee)
     setTriageLabel(composerState.triageLabel)
     setInternalNote(composerState.internalNote)
+    setFollowUpAt(composerState.followUpAt || scheduleOptions[0]?.value || '')
     setActivityMessage(composerState.activityMessage)
   }
 
@@ -169,6 +201,7 @@ export function MessageCenter({
         assignee: handoffAssignee,
         label: triageLabel,
         note: internalNote,
+        followUpAt,
         body: draft,
       },
     )
@@ -179,6 +212,7 @@ export function MessageCenter({
     setHandoffAssignee(result.handoffAssignee)
     setTriageLabel(result.triageLabel)
     setInternalNote(result.internalNote)
+    setFollowUpAt(result.followUpAt || scheduleOptions[0]?.value || '')
     setActivityMessage(result.activityMessage)
   }
 
@@ -271,8 +305,9 @@ export function MessageCenter({
                 className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 value={priority}
                 onChange={(event) => {
-                  const nextPriority = event.target
-                    .value as MessagePriority | 'all'
+                  const nextPriority = event.target.value as
+                    | MessagePriority
+                    | 'all'
                   setPriority(nextPriority)
                   selectFirstMatchingMessage({
                     ...filters,
@@ -307,6 +342,24 @@ export function MessageCenter({
                     {item}
                   </option>
                 ))}
+              </select>
+              <select
+                className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 sm:col-span-2 lg:col-span-1 xl:col-span-2"
+                value={followUp}
+                onChange={(event) => {
+                  const nextFollowUp = event.target.value as NonNullable<
+                    MessageCenterFilters['followUp']
+                  >
+                  setFollowUp(nextFollowUp)
+                  selectFirstMatchingMessage({
+                    ...filters,
+                    followUp: nextFollowUp,
+                  })
+                }}
+              >
+                <option value="all">全部跟进</option>
+                <option value="scheduled">已安排跟进</option>
+                <option value="unscheduled">未安排跟进</option>
               </select>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
@@ -399,7 +452,7 @@ export function MessageCenter({
               </p>
             </div>
 
-            <div className="grid gap-4 p-5 md:grid-cols-3">
+            <div className="grid gap-4 p-5 md:grid-cols-4">
               <MessageFact
                 icon={<UserRound className="size-4" />}
                 label="负责人"
@@ -409,6 +462,11 @@ export function MessageCenter({
                 icon={<Clock3 className="size-4" />}
                 label="SLA"
                 value={selectedMessage.slaLabel}
+              />
+              <MessageFact
+                icon={<Clock3 className="size-4" />}
+                label="跟进时间"
+                value={selectedMessage.followUpAt || '未安排'}
               />
               <MessageFact
                 icon={<AlertCircle className="size-4" />}
@@ -457,7 +515,10 @@ export function MessageCenter({
                 </p>
                 <div className="mt-3 space-y-3">
                   {selectedMessage.timeline.map((item) => (
-                    <div key={`${item.label}-${item.at}`} className="flex gap-3">
+                    <div
+                      key={`${item.label}-${item.at}`}
+                      className="flex gap-3"
+                    >
                       <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
                       <div className="min-w-0">
                         <p className="truncate text-sm text-foreground">
@@ -568,11 +629,40 @@ export function MessageCenter({
                     <StickyNote className="size-4" />
                     备注
                   </button>
+                  <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground">
+                    <Clock3 className="size-4 text-muted-foreground" />
+                    <select
+                      className="h-full bg-transparent text-sm outline-none"
+                      value={followUpAt}
+                      onChange={(event) => setFollowUpAt(event.target.value)}
+                    >
+                      {scheduleOptions.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={
+                      followUpAt.length === 0 ||
+                      followUpAt === selectedMessage.followUpAt
+                    }
+                    onClick={() =>
+                      applyQueueAction('schedule-follow-up', selectedMessage)
+                    }
+                  >
+                    安排跟进
+                  </button>
                   <button
                     type="button"
                     className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={selectedMessage.status !== 'unread'}
-                    onClick={() => applyQueueAction('mark-read', selectedMessage)}
+                    onClick={() =>
+                      applyQueueAction('mark-read', selectedMessage)
+                    }
                   >
                     标记已读
                   </button>

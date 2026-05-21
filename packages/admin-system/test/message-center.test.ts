@@ -6,6 +6,7 @@ import {
   filterMessageCenterItems,
   getMessageCenterComposerState,
   getMessageCenterAssignees,
+  getMessageCenterFollowUpOptions,
   getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
@@ -30,6 +31,7 @@ const messages: MessageCenterItem[] = [
     assignee: '林晨',
     labels: ['入驻审核', '资料复核'],
     internalNotes: ['优先核对联系人手机号和营业执照主体。'],
+    followUpAt: '今日 14:00',
     slaLabel: '2 小时内',
     nextStep: '核对资料并更新品牌状态。',
     suggestedReply: '我们会尽快复核。',
@@ -50,6 +52,7 @@ const messages: MessageCenterItem[] = [
     assignee: '唐雨',
     labels: ['内容异常'],
     internalNotes: ['先抽查最近更新的三门课程封面。'],
+    followUpAt: '',
     slaLabel: '今日内',
     nextStep: '抽查 cover_url。',
     suggestedReply: '我们会核对封面地址。',
@@ -70,6 +73,7 @@ const messages: MessageCenterItem[] = [
     assignee: '系统',
     labels: ['系统通知'],
     internalNotes: ['系统自动归档，无需客服跟进。'],
+    followUpAt: '',
     slaLabel: '无需处理',
     nextStep: '无需人工处理。',
     suggestedReply: '无需回复。',
@@ -111,6 +115,10 @@ test('message center exposes stable label filters', () => {
   ])
 })
 
+test('message center exposes stable follow-up options', () => {
+  assert.deepEqual(getMessageCenterFollowUpOptions(messages), ['今日 14:00'])
+})
+
 test('message center filters by status priority owner and query', () => {
   const filtered = filterMessageCenterItems(messages, {
     status: 'open',
@@ -134,11 +142,36 @@ test('message center filters by labels', () => {
   )
 })
 
+test('message center filters by scheduled follow-up state', () => {
+  assert.deepEqual(
+    filterMessageCenterItems(messages, { followUp: 'scheduled' }).map(
+      (message) => message.id,
+    ),
+    ['brand-audit'],
+  )
+  assert.deepEqual(
+    filterMessageCenterItems(messages, { followUp: 'unscheduled' }).map(
+      (message) => message.id,
+    ),
+    ['course-cover', 'invoice'],
+  )
+})
+
 test('message center query searches sender and assignee fields', () => {
   assert.equal(filterMessageCenterItems(messages, { query: '青岚' }).length, 1)
   assert.equal(filterMessageCenterItems(messages, { query: '唐雨' }).length, 1)
-  assert.equal(filterMessageCenterItems(messages, { query: '内容异常' }).length, 1)
-  assert.equal(filterMessageCenterItems(messages, { query: '营业执照' }).length, 1)
+  assert.equal(
+    filterMessageCenterItems(messages, { query: '内容异常' }).length,
+    1,
+  )
+  assert.equal(
+    filterMessageCenterItems(messages, { query: '营业执照' }).length,
+    1,
+  )
+  assert.equal(
+    filterMessageCenterItems(messages, { query: '今日 14:00' }).length,
+    1,
+  )
 })
 
 test('message center queue view keeps the selected visible message', () => {
@@ -173,6 +206,7 @@ test('message center composer state follows selected queue messages', () => {
       handoffAssignee: '唐雨',
       triageLabel: '内容异常',
       internalNote: '',
+      followUpAt: '',
       activityMessage: '草稿未发送',
     },
   )
@@ -182,6 +216,7 @@ test('message center composer state follows selected queue messages', () => {
     handoffAssignee: '',
     triageLabel: '系统通知',
     internalNote: '',
+    followUpAt: '',
     activityMessage: '草稿未发送',
   })
 })
@@ -255,10 +290,7 @@ test('message center can add triage labels once', () => {
 
   assert.equal(updated[1]?.status, 'open')
   assert.deepEqual(updated[1]?.labels, ['内容异常', '需研发确认'])
-  assert.equal(
-    updated[1]?.timeline.at(-1)?.label,
-    '唐雨 添加标签 需研发确认',
-  )
+  assert.equal(updated[1]?.timeline.at(-1)?.label, '唐雨 添加标签 需研发确认')
   assert.equal(unchanged[1]?.timeline.length, updated[1]?.timeline.length)
 })
 
@@ -288,6 +320,32 @@ test('message center skips blank internal notes', () => {
   assert.equal(updated[1]?.timeline.length, messages[1]?.timeline.length)
 })
 
+test('message center can schedule follow-up without reopening resolved messages', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'invoice', {
+    action: 'schedule-follow-up',
+    actor: '系统',
+    followUpAt: '下周一 10:00',
+  })
+
+  assert.equal(updated[2]?.status, 'resolved')
+  assert.equal(updated[2]?.followUpAt, '下周一 10:00')
+  assert.equal(
+    updated[2]?.timeline.at(-1)?.label,
+    '系统 安排 下周一 10:00 跟进',
+  )
+})
+
+test('message center skips unchanged follow-up schedules', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'brand-audit', {
+    action: 'schedule-follow-up',
+    actor: '林晨',
+    followUpAt: '今日 14:00',
+  })
+
+  assert.equal(updated[0]?.followUpAt, '今日 14:00')
+  assert.equal(updated[0]?.timeline.length, messages[0]?.timeline.length)
+})
+
 test('message center action result keeps the composer aligned with the visible queue', () => {
   const nextUnread: MessageCenterItem = {
     ...messages[0],
@@ -315,5 +373,6 @@ test('message center action result keeps the composer aligned with the visible q
   assert.equal(result.handoffAssignee, '周然')
   assert.equal(result.triageLabel, '入驻审核')
   assert.equal(result.internalNote, '')
+  assert.equal(result.followUpAt, '今日 14:00')
   assert.equal(result.activityMessage, '消息已转入处理中')
 })
