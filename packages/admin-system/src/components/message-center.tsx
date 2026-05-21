@@ -11,6 +11,7 @@ import {
   Search,
   Send,
   Sparkles,
+  StickyNote,
   Tag,
   UserRound,
 } from 'lucide-react'
@@ -102,6 +103,7 @@ export function MessageCenter({
     messages[0]?.assignee ?? '',
   )
   const [triageLabel, setTriageLabel] = useState(messages[0]?.labels[0] ?? '')
+  const [internalNote, setInternalNote] = useState('')
   const [activityMessage, setActivityMessage] = useState('草稿未发送')
   const filters = useMemo<MessageCenterFilters>(
     () => ({
@@ -140,6 +142,7 @@ export function MessageCenter({
     setDraft(message?.suggestedReply ?? '')
     setHandoffAssignee(message?.assignee ?? '')
     setTriageLabel(message?.labels[0] ?? labelOptions[0] ?? '')
+    setInternalNote('')
     setActivityMessage('草稿未发送')
   }
 
@@ -162,6 +165,7 @@ export function MessageCenter({
         actor: message.assignee,
         assignee: handoffAssignee,
         label: triageLabel,
+        note: internalNote,
         body: draft,
       },
     )
@@ -173,6 +177,7 @@ export function MessageCenter({
     setTriageLabel(
       result.view.selectedMessage?.labels[0] ?? labelOptions[0] ?? '',
     )
+    setInternalNote('')
     setActivityMessage(result.activityMessage)
   }
 
@@ -412,16 +417,35 @@ export function MessageCenter({
             </div>
 
             <div className="grid gap-4 px-5 md:grid-cols-[1fr_minmax(16rem,20rem)]">
-              <div className="rounded-lg border border-border bg-background p-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      下一步
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                      {selectedMessage.nextStep}
-                    </p>
+              <div className="space-y-4">
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        下一步
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {selectedMessage.nextStep}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <StickyNote className="size-4 text-primary" />
+                    内部备注
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {selectedMessage.internalNotes.map((item) => (
+                      <p
+                        key={item}
+                        className="rounded-md bg-muted px-3 py-2 text-sm leading-6 text-muted-foreground"
+                      >
+                        {item}
+                      </p>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -470,6 +494,12 @@ export function MessageCenter({
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="输入给对方的回复内容"
+              />
+              <textarea
+                className="min-h-16 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm leading-6 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
+                value={internalNote}
+                onChange={(event) => setInternalNote(event.target.value)}
+                placeholder="记录只对内部可见的处理备注"
               />
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground">
@@ -527,6 +557,15 @@ export function MessageCenter({
                     onClick={() => applyQueueAction('label', selectedMessage)}
                   >
                     添加标签
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={internalNote.trim().length === 0}
+                    onClick={() => applyQueueAction('note', selectedMessage)}
+                  >
+                    <StickyNote className="size-4" />
+                    备注
                   </button>
                   <button
                     type="button"

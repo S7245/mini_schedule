@@ -28,6 +28,7 @@ const messages: MessageCenterItem[] = [
     owner: '运营组',
     assignee: '林晨',
     labels: ['入驻审核', '资料复核'],
+    internalNotes: ['优先核对联系人手机号和营业执照主体。'],
     slaLabel: '2 小时内',
     nextStep: '核对资料并更新品牌状态。',
     suggestedReply: '我们会尽快复核。',
@@ -47,6 +48,7 @@ const messages: MessageCenterItem[] = [
     owner: '内容组',
     assignee: '唐雨',
     labels: ['内容异常'],
+    internalNotes: ['先抽查最近更新的三门课程封面。'],
     slaLabel: '今日内',
     nextStep: '抽查 cover_url。',
     suggestedReply: '我们会核对封面地址。',
@@ -66,6 +68,7 @@ const messages: MessageCenterItem[] = [
     owner: '财务组',
     assignee: '系统',
     labels: ['系统通知'],
+    internalNotes: ['系统自动归档，无需客服跟进。'],
     slaLabel: '无需处理',
     nextStep: '无需人工处理。',
     suggestedReply: '无需回复。',
@@ -134,6 +137,7 @@ test('message center query searches sender and assignee fields', () => {
   assert.equal(filterMessageCenterItems(messages, { query: '青岚' }).length, 1)
   assert.equal(filterMessageCenterItems(messages, { query: '唐雨' }).length, 1)
   assert.equal(filterMessageCenterItems(messages, { query: '内容异常' }).length, 1)
+  assert.equal(filterMessageCenterItems(messages, { query: '营业执照' }).length, 1)
 })
 
 test('message center queue view keeps the selected visible message', () => {
@@ -234,6 +238,32 @@ test('message center can add triage labels once', () => {
     '唐雨 添加标签 需研发确认',
   )
   assert.equal(unchanged[1]?.timeline.length, updated[1]?.timeline.length)
+})
+
+test('message center can record internal notes without reopening resolved messages', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'invoice', {
+    action: 'note',
+    actor: '系统',
+    note: '月底财务复盘时再抽查一次。',
+  })
+
+  assert.equal(updated[2]?.status, 'resolved')
+  assert.deepEqual(updated[2]?.internalNotes, [
+    '系统自动归档，无需客服跟进。',
+    '月底财务复盘时再抽查一次。',
+  ])
+  assert.equal(updated[2]?.timeline.at(-1)?.label, '系统 添加内部备注')
+})
+
+test('message center skips blank internal notes', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'course-cover', {
+    action: 'note',
+    actor: '唐雨',
+    note: '   ',
+  })
+
+  assert.equal(updated[1]?.internalNotes.length, 1)
+  assert.equal(updated[1]?.timeline.length, messages[1]?.timeline.length)
 })
 
 test('message center action result keeps the composer aligned with the visible queue', () => {

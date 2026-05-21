@@ -42,6 +42,9 @@ const messages: MessageCenterItem[] = [
     owner: '运营组',
     assignee: '林晨',
     labels: ['入驻审核', '资料复核'],
+    internalNotes: [
+      '先核对营业执照主体和联系人手机号，再决定是否转交客服补充资料。',
+    ],
     slaLabel: '2 小时内',
     nextStep:
       '进入品牌详情页核对资料，确认无误后将品牌状态从 pending 调整为 active。',
@@ -66,6 +69,9 @@ const messages: MessageCenterItem[] = [
     owner: '客服组',
     assignee: '周然',
     labels: ['账号支持', '身份核验'],
+    internalNotes: [
+      '不要直接发送临时密码，先确认品牌联系人和管理员手机号一致。',
+    ],
     slaLabel: '今日内',
     nextStep:
       '联系品牌联系人核验手机号，完成后在管理员管理中创建临时密码并通知对方更新。',
@@ -90,6 +96,9 @@ const messages: MessageCenterItem[] = [
     owner: '产品组',
     assignee: '何知',
     labels: ['功能咨询', '报表需求'],
+    internalNotes: [
+      '归档到报表需求池，避免承诺具体导出上线时间。',
+    ],
     slaLabel: '2 个工作日',
     nextStep:
       '记录到后台报表需求池，回复当前版本暂不支持导出，并提供训练记录页筛选替代方案。',
@@ -114,6 +123,9 @@ const messages: MessageCenterItem[] = [
     owner: '内容组',
     assignee: '唐雨',
     labels: ['内容异常', '图片资源'],
+    internalNotes: [
+      '先抽查 cover_url 是否可公网访问，再判断是否需要前端图片域名配置。',
+    ],
     slaLabel: '今日内',
     nextStep:
       '抽查课程详情页的 cover_url，若 URL 可访问则继续排查前端图片域名配置。',
@@ -138,6 +150,9 @@ const messages: MessageCenterItem[] = [
     owner: '财务组',
     assignee: '系统',
     labels: ['系统通知', '财务归档'],
+    internalNotes: [
+      '系统自动归档通知，当前不需要人工客服跟进。',
+    ],
     slaLabel: '无需处理',
     nextStep: '无需人工处理，等待后续财务模块接入真实发票数据。',
     suggestedReply:

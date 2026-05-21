@@ -31,6 +31,7 @@ export interface MessageCenterItem {
   owner: string
   assignee: string
   labels: string[]
+  internalNotes: string[]
   slaLabel: string
   nextStep: string
   suggestedReply: string
@@ -57,12 +58,14 @@ export type MessageCenterQueueAction =
   | 'resolve'
   | 'assign'
   | 'label'
+  | 'note'
 
 export interface MessageCenterQueueUpdate {
   action: MessageCenterQueueAction
   actor?: string
   assignee?: string
   label?: string
+  note?: string
   body?: string
   at?: string
 }
@@ -140,6 +143,7 @@ export function filterMessageCenterItems(
         message.audience,
         message.owner,
         message.assignee,
+        ...message.internalNotes,
         ...message.labels,
       ]
         .join(' ')
@@ -179,6 +183,7 @@ export function updateMessageCenterQueueItem(
     actor = '当前处理人',
     assignee,
     label,
+    note,
     body = '',
     at = '刚刚',
   }: MessageCenterQueueUpdate,
@@ -239,6 +244,24 @@ export function updateMessageCenterQueueItem(
       }
     }
 
+    if (action === 'note') {
+      const nextNote = note?.trim()
+
+      if (!nextNote) {
+        return message
+      }
+
+      return {
+        ...message,
+        internalNotes: [...message.internalNotes, nextNote],
+        status: message.status === 'resolved' ? 'resolved' : 'open',
+        timeline: [
+          ...message.timeline,
+          { label: `${actor} 添加内部备注`, at },
+        ],
+      }
+    }
+
     const replyPreview = body.trim()
     const replyLabel =
       replyPreview.length > 0
@@ -277,6 +300,7 @@ export function applyMessageCenterQueueAction(
       update.action,
       nextMessages.find((message) => message.id === selectedId),
       update.label,
+      update.note,
     ),
   }
 }
@@ -285,6 +309,7 @@ function getMessageCenterActivityMessage(
   action: MessageCenterQueueAction,
   updatedMessage: MessageCenterItem | undefined,
   label?: string,
+  note?: string,
 ): string {
   if (action === 'reply') {
     return '回复已记录到处理时间线'
@@ -300,6 +325,10 @@ function getMessageCenterActivityMessage(
 
   if (action === 'label') {
     return label ? `已添加标签 ${label}` : '标签未变更'
+  }
+
+  if (action === 'note') {
+    return note?.trim() ? '内部备注已记录' : '备注未变更'
   }
 
   return '消息已转入处理中'
