@@ -5,6 +5,7 @@ import {
   filterMessageCenterItems,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
+  updateMessageCenterQueueItem,
   type MessageCenterItem,
 } from '../src/models/message-center'
 
@@ -97,4 +98,36 @@ test('message center filters by status priority owner and query', () => {
 test('message center query searches sender and assignee fields', () => {
   assert.equal(filterMessageCenterItems(messages, { query: '青岚' }).length, 1)
   assert.equal(filterMessageCenterItems(messages, { query: '唐雨' }).length, 1)
+})
+
+test('message center can move unread messages into the open queue', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'brand-audit', {
+    action: 'mark-read',
+    actor: '林晨',
+    at: '刚刚',
+  })
+
+  assert.equal(updated[0]?.status, 'open')
+  assert.equal(updated[0]?.timeline.at(-1)?.label, '林晨 标记为处理中')
+})
+
+test('message center records replies without reopening resolved messages', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'invoice', {
+    action: 'reply',
+    actor: '系统',
+    body: '无需回复。',
+  })
+
+  assert.equal(updated[2]?.status, 'resolved')
+  assert.equal(/系统 回复/.test(updated[2]?.timeline.at(-1)?.label ?? ''), true)
+})
+
+test('message center can resolve open messages', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'course-cover', {
+    action: 'resolve',
+    actor: '唐雨',
+  })
+
+  assert.equal(updated[1]?.status, 'resolved')
+  assert.equal(updated[1]?.timeline.at(-1)?.label, '唐雨 标记已解决')
 })

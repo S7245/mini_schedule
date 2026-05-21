@@ -18,10 +18,12 @@ import {
   filterMessageCenterItems,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
+  updateMessageCenterQueueItem,
 } from '../models/message-center'
 import type {
   MessageCenterItem,
   MessageCenterMetric,
+  MessageCenterQueueAction,
   MessageCenterReplyTemplate,
   MessagePriority,
   MessageStatus,
@@ -30,6 +32,7 @@ import type {
 export type {
   MessageCenterItem,
   MessageCenterMetric,
+  MessageCenterQueueAction,
   MessageCenterReplyTemplate,
   MessageCenterTimelineItem,
   MessagePriority,
@@ -81,6 +84,7 @@ export function MessageCenter({
   replyTemplates,
   scopeLabel,
 }: MessageCenterProps) {
+  const [queueMessages, setQueueMessages] = useState(messages)
   const [status, setStatus] = useState<MessageStatus | 'all'>('all')
   const [priority, setPriority] = useState<MessagePriority | 'all'>('all')
   const [owner, setOwner] = useState('all')
@@ -89,21 +93,25 @@ export function MessageCenter({
     messages[0]?.id,
   )
   const [draft, setDraft] = useState(messages[0]?.suggestedReply ?? '')
+  const [activityMessage, setActivityMessage] = useState('草稿未发送')
 
   const statusCounts = useMemo(
-    () => getMessageCenterStatusCounts(messages),
-    [messages],
+    () => getMessageCenterStatusCounts(queueMessages),
+    [queueMessages],
   )
-  const ownerOptions = useMemo(() => getMessageCenterOwners(messages), [messages])
+  const ownerOptions = useMemo(
+    () => getMessageCenterOwners(queueMessages),
+    [queueMessages],
+  )
   const filteredMessages = useMemo(
     () =>
-      filterMessageCenterItems(messages, {
+      filterMessageCenterItems(queueMessages, {
         status,
         priority,
         owner,
         query,
       }),
-    [messages, owner, priority, query, status],
+    [owner, priority, query, queueMessages, status],
   )
 
   const selectedMessage =
@@ -113,6 +121,41 @@ export function MessageCenter({
   const selectMessage = (message: MessageCenterItem | undefined) => {
     setSelectedId(message?.id)
     setDraft(message?.suggestedReply ?? '')
+    setActivityMessage('草稿未发送')
+  }
+
+  const applyQueueAction = (
+    action: MessageCenterQueueAction,
+    message: MessageCenterItem,
+  ) => {
+    const nextMessages = updateMessageCenterQueueItem(
+      queueMessages,
+      message.id,
+      {
+        action,
+        actor: message.assignee,
+        body: draft,
+      },
+    )
+    const nextFiltered = filterMessageCenterItems(nextMessages, {
+      status,
+      priority,
+      owner,
+      query,
+    })
+    const visibleMessage =
+      nextFiltered.find((item) => item.id === message.id) ?? nextFiltered[0]
+
+    setQueueMessages(nextMessages)
+    setSelectedId(visibleMessage?.id)
+    setDraft(visibleMessage?.suggestedReply ?? '')
+    const nextActivityMessage =
+      action === 'reply'
+        ? '回复已记录到处理时间线'
+        : action === 'resolve'
+          ? '消息已标记解决'
+          : '消息已转入处理中'
+    setActivityMessage(nextActivityMessage)
   }
 
   return (
@@ -156,7 +199,7 @@ export function MessageCenter({
                     )}
                     onClick={() => {
                       setStatus(item)
-                      const next = filterMessageCenterItems(messages, {
+                      const next = filterMessageCenterItems(queueMessages, {
                         status: item,
                         priority,
                         owner,
@@ -178,7 +221,7 @@ export function MessageCenter({
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value)
-                  const next = filterMessageCenterItems(messages, {
+                  const next = filterMessageCenterItems(queueMessages, {
                     status,
                     priority,
                     owner,
@@ -196,7 +239,7 @@ export function MessageCenter({
                 value={owner}
                 onChange={(event) => {
                   setOwner(event.target.value)
-                  const next = filterMessageCenterItems(messages, {
+                  const next = filterMessageCenterItems(queueMessages, {
                     status,
                     priority,
                     owner: event.target.value,
@@ -219,7 +262,7 @@ export function MessageCenter({
                   const nextPriority = event.target
                     .value as MessagePriority | 'all'
                   setPriority(nextPriority)
-                  const next = filterMessageCenterItems(messages, {
+                  const next = filterMessageCenterItems(queueMessages, {
                     status,
                     priority: nextPriority,
                     owner,
@@ -240,7 +283,7 @@ export function MessageCenter({
               </select>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              当前筛选 {filteredMessages.length} / {messages.length} 条
+              当前筛选 {filteredMessages.length} / {queueMessages.length} 条
             </p>
           </div>
 
@@ -401,21 +444,32 @@ export function MessageCenter({
               />
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground">
-                  草稿未发送
+                  {activityMessage}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={selectedMessage.status !== 'unread'}
+                    onClick={() => applyQueueAction('mark-read', selectedMessage)}
                   >
                     标记已读
                   </button>
                   <button
                     type="button"
                     className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                    onClick={() => applyQueueAction('reply', selectedMessage)}
                   >
                     <Send className="size-4" />
                     回复
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={selectedMessage.status === 'resolved'}
+                    onClick={() => applyQueueAction('resolve', selectedMessage)}
+                  >
+                    解决
                   </button>
                 </div>
               </div>
