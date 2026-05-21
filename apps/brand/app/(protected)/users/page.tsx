@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ProtectedLayout } from '@/components/layout/protected-layout'
 import { getBackofficePagination, getBackofficePaginationLabel } from '@mini-schedule/admin-system/models/pagination'
+import { filterBackofficeItemsByQuery } from '@mini-schedule/admin-system/models/search'
 import type { AppUser, PageResponse } from '@mini-schedule/types'
 
 const createUserSchema = z.object({
@@ -39,6 +40,11 @@ export default function UsersPage() {
     totalItems: data?.total,
     pageSize: data?.page_size,
   })
+  const filteredItems = filterBackofficeItemsByQuery(
+    data?.items ?? [],
+    search,
+    (learner) => [learner.phone, learner.nickname],
+  )
 
   const {
     register,
@@ -122,28 +128,22 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.items
-                  .filter((u) => {
-                    if (!search) return true
-                    const q = search.toLowerCase()
-                    return u.phone?.includes(q) || u.nickname?.toLowerCase().includes(q)
-                  })
-                  .map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-mono text-sm">{u.id}</TableCell>
-                      <TableCell>{u.phone ?? '-'}</TableCell>
-                      <TableCell>{u.nickname ?? '-'}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${u.role === 'vip' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'}`}>{u.role === 'vip' ? 'VIP' : '普通'}</span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString('zh-CN')}</TableCell>
-                      <TableCell>
-                        <Link href={`/users/${u.id}`} className="text-primary hover:underline text-sm">
-                          查看
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                {filteredItems.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-mono text-sm">{u.id}</TableCell>
+                    <TableCell>{u.phone ?? '-'}</TableCell>
+                    <TableCell>{u.nickname ?? '-'}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${u.role === 'vip' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'}`}>{u.role === 'vip' ? 'VIP' : '普通'}</span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{new Date(u.created_at).toLocaleDateString('zh-CN')}</TableCell>
+                    <TableCell>
+                      <Link href={`/users/${u.id}`} className="text-primary hover:underline text-sm">
+                        查看
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
 

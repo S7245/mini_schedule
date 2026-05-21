@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProtectedLayout } from '@/components/layout/protected-layout'
 import { getBackofficePagination, getBackofficePaginationLabel } from '@mini-schedule/admin-system/models/pagination'
+import { filterBackofficeItemsByQuery } from '@mini-schedule/admin-system/models/search'
 import type { TrainingRecord, PageResponse } from '@mini-schedule/types'
 
 export default function TrainingsPage() {
@@ -23,11 +24,11 @@ export default function TrainingsPage() {
     pageSize: data?.page_size,
   })
 
-  const filteredItems = data?.items?.filter((r) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return r.user_id.toLowerCase().includes(q) || r.notes?.toLowerCase().includes(q)
-  })
+  const filteredItems = filterBackofficeItemsByQuery(
+    data?.items ?? [],
+    search,
+    (record) => [record.user_id, record.notes],
+  )
 
   return (
     <ProtectedLayout>
@@ -64,14 +65,14 @@ export default function TrainingsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredItems?.length === 0 ? (
+                    {filteredItems.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                           无匹配记录
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredItems?.map((t) => (
+                      filteredItems.map((t) => (
                         <TableRow key={t.id}>
                           <TableCell className="font-mono text-sm">{t.user_id}</TableCell>
                           <TableCell>{t.course_id ? <span className="font-mono text-sm">{t.course_id}</span> : <span className="text-muted-foreground">自由训练</span>}</TableCell>
