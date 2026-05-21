@@ -5,41 +5,16 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
-import {
-  useBrandCourses,
-  useCreateBrandCourse,
-  useUpdateCourseStatus,
-  useDeleteBrandCourse,
-} from '@mini-schedule/api/brand'
+import { useBrandCourses, useCreateBrandCourse, useUpdateCourseStatus, useDeleteBrandCourse } from '@mini-schedule/api/brand'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ProtectedLayout } from '@/components/layout/protected-layout'
+import { getBackofficePagination, getBackofficePaginationLabel } from '@mini-schedule/admin-system/models/pagination'
 import type { CourseType, CourseDifficulty, Course } from '@mini-schedule/types'
 
 const createCourseSchema = z.object({
@@ -88,6 +63,11 @@ export default function CoursesPage() {
   const createMutation = useCreateBrandCourse()
   const statusMutation = useUpdateCourseStatus()
   const deleteMutation = useDeleteBrandCourse()
+  const pagination = getBackofficePagination({
+    page: data?.page ?? page,
+    totalItems: data?.total,
+    pageSize: data?.page_size,
+  })
 
   const {
     register,
@@ -97,7 +77,12 @@ export default function CoursesPage() {
     formState: { errors },
   } = useForm<CreateCourseForm>({
     resolver: zodResolver(createCourseSchema),
-    defaultValues: { title: '', description: '', cover_url: '', duration_min: 30 },
+    defaultValues: {
+      title: '',
+      description: '',
+      cover_url: '',
+      duration_min: 30,
+    },
   })
 
   const onSubmit = async (data: CreateCourseForm) => {
@@ -125,9 +110,7 @@ export default function CoursesPage() {
                   <div className="space-y-2">
                     <Label htmlFor="title">标题</Label>
                     <Input id="title" {...register('title')} />
-                    {errors.title && (
-                      <p className="text-sm text-destructive">{errors.title.message}</p>
-                    )}
+                    {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="description">描述</Label>
@@ -142,13 +125,13 @@ export default function CoursesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(typeLabels).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>{v}</SelectItem>
+                            <SelectItem key={k} value={k}>
+                              {v}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.type && (
-                        <p className="text-sm text-destructive">{errors.type.message}</p>
-                      )}
+                      {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label>难度</Label>
@@ -158,28 +141,24 @@ export default function CoursesPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {Object.entries(difficultyLabels).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>{v}</SelectItem>
+                            <SelectItem key={k} value={k}>
+                              {v}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.difficulty && (
-                        <p className="text-sm text-destructive">{errors.difficulty.message}</p>
-                      )}
+                      {errors.difficulty && <p className="text-sm text-destructive">{errors.difficulty.message}</p>}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="duration_min">时长（分钟）</Label>
                     <Input id="duration_min" type="number" {...register('duration_min')} />
-                    {errors.duration_min && (
-                      <p className="text-sm text-destructive">{errors.duration_min.message}</p>
-                    )}
+                    {errors.duration_min && <p className="text-sm text-destructive">{errors.duration_min.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cover_url">封面 URL</Label>
                     <Input id="cover_url" placeholder="https://..." {...register('cover_url')} />
-                    {errors.cover_url && (
-                      <p className="text-sm text-destructive">{errors.cover_url.message}</p>
-                    )}
+                    {errors.cover_url && <p className="text-sm text-destructive">{errors.cover_url.message}</p>}
                   </div>
                 </div>
                 <DialogFooter>
@@ -222,9 +201,7 @@ export default function CoursesPage() {
                     <TableCell>{difficultyLabels[c.difficulty]}</TableCell>
                     <TableCell>{c.duration_min} 分钟</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusColors[c.status]}`}>
-                        {statusLabels[c.status]}
-                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusColors[c.status]}`}>{statusLabels[c.status]}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -234,7 +211,12 @@ export default function CoursesPage() {
                         {c.status === 'draft' && (
                           <button
                             className="text-green-600 hover:underline text-sm"
-                            onClick={() => statusMutation.mutate({ id: c.id, status: 'published' })}
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: c.id,
+                                status: 'published',
+                              })
+                            }
                           >
                             发布
                           </button>
@@ -242,7 +224,12 @@ export default function CoursesPage() {
                         {c.status === 'published' && (
                           <button
                             className="text-amber-600 hover:underline text-sm"
-                            onClick={() => statusMutation.mutate({ id: c.id, status: 'archived' })}
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: c.id,
+                                status: 'archived',
+                              })
+                            }
                           >
                             下架
                           </button>
@@ -265,25 +252,12 @@ export default function CoursesPage() {
             </Table>
 
             <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
-                共 {data.total} 条，第 {data.page} 页 / 共{' '}
-                {Math.ceil(data.total / data.page_size)} 页
-              </p>
+              <p className="text-sm text-muted-foreground">{getBackofficePaginationLabel(pagination)}</p>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
+                <Button variant="outline" size="sm" disabled={!pagination.canGoPrevious} onClick={() => setPage((p) => p - 1)}>
                   上一页
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= Math.ceil(data.total / data.page_size)}
-                  onClick={() => setPage((p) => p + 1)}
-                >
+                <Button variant="outline" size="sm" disabled={!pagination.canGoNext} onClick={() => setPage((p) => p + 1)}>
                   下一页
                 </Button>
               </div>

@@ -18,6 +18,7 @@ import { StatusBadge } from '@mini-schedule/admin-system/components/status-badge
 import { EmptyState } from '@mini-schedule/admin-system/components/empty-state'
 import { LoadingState } from '@mini-schedule/admin-system/components/loading-state'
 import { DataTable } from '@mini-schedule/admin-system/components/data-table'
+import { getBackofficePagination, getBackofficePaginationLabel } from '@mini-schedule/admin-system/models/pagination'
 import type { AdminUser, PageResponse } from '@mini-schedule/types'
 
 const createAdminSchema = z.object({
@@ -28,7 +29,11 @@ const createAdminSchema = z.object({
 
 type CreateAdminForm = z.infer<typeof createAdminSchema>
 
-const roleLabels: Record<string, string> = { super_admin: '超级管理员', operator: '运营', support: '客服' }
+const roleLabels: Record<string, string> = {
+  super_admin: '超级管理员',
+  operator: '运营',
+  support: '客服',
+}
 
 const roleTone = {
   super_admin: 'neutral' as const,
@@ -45,7 +50,13 @@ export default function AdminsPage() {
   }
   const createMutation = useCreateAdmin()
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CreateAdminForm>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<CreateAdminForm>({
     resolver: zodResolver(createAdminSchema),
     defaultValues: { username: '', password: '', role: 'operator' },
   })
@@ -56,7 +67,11 @@ export default function AdminsPage() {
     setDialogOpen(false)
   }
 
-  const totalPages = data ? Math.ceil(data.total / data.page_size) : 1
+  const pagination = getBackofficePagination({
+    page: data?.page ?? page,
+    totalItems: data?.total,
+    pageSize: data?.page_size,
+  })
 
   return (
     <ResourceListPage
@@ -66,7 +81,9 @@ export default function AdminsPage() {
           description="管理平台后台账号和角色分配。"
           actions={
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild><Button>创建管理员</Button></DialogTrigger>
+              <DialogTrigger asChild>
+                <Button>创建管理员</Button>
+              </DialogTrigger>
               <DialogContent>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <DialogHeader>
@@ -87,17 +104,27 @@ export default function AdminsPage() {
                     <div className="space-y-2">
                       <Label>角色</Label>
                       <Select onValueChange={(v) => setValue('role', v as CreateAdminForm['role'])} defaultValue="operator">
-                        <SelectTrigger><SelectValue placeholder="选择角色" /></SelectTrigger>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择角色" />
+                        </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(roleLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                          {Object.entries(roleLabels).map(([k, v]) => (
+                            <SelectItem key={k} value={k}>
+                              {v}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-                    <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? '创建中...' : '创建'}</Button>
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      取消
+                    </Button>
+                    <Button type="submit" disabled={createMutation.isPending}>
+                      {createMutation.isPending ? '创建中...' : '创建'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -146,19 +173,12 @@ export default function AdminsPage() {
       }
       footer={
         <div className="flex items-center justify-between px-6 py-4">
-          <p className="text-sm text-slate-500">
-            共 {data?.total ?? 0} 条，第 {page} 页 / 共 {totalPages} 页
-          </p>
+          <p className="text-sm text-slate-500">{getBackofficePaginationLabel(pagination)}</p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+            <Button variant="outline" size="sm" disabled={!pagination.canGoPrevious} onClick={() => setPage((current) => current - 1)}>
               上一页
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((current) => current + 1)}
-            >
+            <Button variant="outline" size="sm" disabled={!pagination.canGoNext} onClick={() => setPage((current) => current + 1)}>
               下一页
             </Button>
           </div>

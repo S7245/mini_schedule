@@ -18,6 +18,7 @@ import { EmptyState } from '@mini-schedule/admin-system/components/empty-state'
 import { DataTable } from '@mini-schedule/admin-system/components/data-table'
 import { LoadingState } from '@mini-schedule/admin-system/components/loading-state'
 import { FilterBar } from '@mini-schedule/admin-system/components/filter-bar'
+import { getBackofficePagination, getBackofficePaginationLabel } from '@mini-schedule/admin-system/models/pagination'
 import type { Brand, BrandStatus, PageResponse } from '@mini-schedule/types'
 
 const createBrandSchema = z.object({
@@ -45,9 +46,19 @@ export default function BrandsPage() {
   const createMutation = useCreateBrand()
   const statusMutation = useUpdateBrandStatus()
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateBrandForm>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateBrandForm>({
     resolver: zodResolver(createBrandSchema),
-    defaultValues: { name: '', logo_url: '', contact_name: '', contact_phone: '' },
+    defaultValues: {
+      name: '',
+      logo_url: '',
+      contact_name: '',
+      contact_phone: '',
+    },
   })
 
   const onSubmit = async (formData: CreateBrandForm) => {
@@ -56,7 +67,11 @@ export default function BrandsPage() {
     setDialogOpen(false)
   }
 
-  const totalPages = data ? Math.ceil(data.total / data.page_size) : 1
+  const pagination = getBackofficePagination({
+    page: data?.page ?? page,
+    totalItems: data?.total,
+    pageSize: data?.page_size,
+  })
 
   return (
     <ResourceListPage
@@ -66,7 +81,9 @@ export default function BrandsPage() {
           description="管理平台品牌入驻、启用状态和品牌详情。"
           actions={
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild><Button>创建品牌</Button></DialogTrigger>
+              <DialogTrigger asChild>
+                <Button>创建品牌</Button>
+              </DialogTrigger>
               <DialogContent>
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <DialogHeader>
@@ -96,8 +113,12 @@ export default function BrandsPage() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>取消</Button>
-                    <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? '创建中...' : '创建'}</Button>
+                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      取消
+                    </Button>
+                    <Button type="submit" disabled={createMutation.isPending}>
+                      {createMutation.isPending ? '创建中...' : '创建'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -109,7 +130,9 @@ export default function BrandsPage() {
         <FilterBar>
           <p className="text-sm text-slate-500">共 {data?.total ?? 0} 个品牌，支持创建、查看与状态变更。</p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">导出列表</Button>
+            <Button variant="outline" size="sm">
+              导出列表
+            </Button>
           </div>
         </FilterBar>
       }
@@ -150,7 +173,12 @@ export default function BrandsPage() {
                           <button
                             type="button"
                             className="text-sm text-green-600 hover:underline"
-                            onClick={() => statusMutation.mutate({ id: brand.id, status: 'active' })}
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: brand.id,
+                                status: 'active',
+                              })
+                            }
                           >
                             启用
                           </button>
@@ -159,7 +187,12 @@ export default function BrandsPage() {
                           <button
                             type="button"
                             className="text-sm text-amber-600 hover:underline"
-                            onClick={() => statusMutation.mutate({ id: brand.id, status: 'suspended' })}
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: brand.id,
+                                status: 'suspended',
+                              })
+                            }
                           >
                             停用
                           </button>
@@ -175,19 +208,12 @@ export default function BrandsPage() {
       }
       footer={
         <div className="flex items-center justify-between px-6 py-4">
-          <p className="text-sm text-slate-500">
-            共 {data?.total ?? 0} 条，第 {page} 页 / 共 {totalPages} 页
-          </p>
+          <p className="text-sm text-slate-500">{getBackofficePaginationLabel(pagination)}</p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+            <Button variant="outline" size="sm" disabled={!pagination.canGoPrevious} onClick={() => setPage((current) => current - 1)}>
               上一页
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((current) => current + 1)}
-            >
+            <Button variant="outline" size="sm" disabled={!pagination.canGoNext} onClick={() => setPage((current) => current + 1)}>
               下一页
             </Button>
           </div>

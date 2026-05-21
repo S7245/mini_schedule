@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./models/nav": "./src/models/nav.ts",
     "./models/page-meta": "./src/models/page-meta.ts",
+    "./models/pagination": "./src/models/pagination.ts",
     "./shell/app-shell": "./src/shell/app-shell.tsx",
     "./shell/protected-app-layout": "./src/shell/protected-app-layout.tsx",
     "./templates/login-shell": "./src/templates/login-shell.tsx",

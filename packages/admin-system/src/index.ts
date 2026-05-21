@@ -1,5 +1,6 @@
 export * from './models/nav'
 export * from './models/page-meta'
+export * from './models/pagination'
 export * from './lib/cn'
 export * from './shell/protected-app-layout'
 export * from './templates/login-shell'
