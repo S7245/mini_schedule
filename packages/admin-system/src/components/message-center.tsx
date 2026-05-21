@@ -8,48 +8,33 @@ import {
   Clock3,
   Inbox,
   MessageSquare,
+  Search,
   Send,
   Sparkles,
   UserRound,
 } from 'lucide-react'
 import { cn } from '../lib/cn'
+import {
+  filterMessageCenterItems,
+  getMessageCenterOwners,
+  getMessageCenterStatusCounts,
+} from '../models/message-center'
+import type {
+  MessageCenterItem,
+  MessageCenterMetric,
+  MessageCenterReplyTemplate,
+  MessagePriority,
+  MessageStatus,
+} from '../models/message-center'
 
-export type MessageStatus = 'unread' | 'open' | 'resolved'
-export type MessagePriority = 'high' | 'normal' | 'low'
-
-export interface MessageCenterMetric {
-  label: string
-  value: string
-  detail: string
-}
-
-export interface MessageCenterReplyTemplate {
-  label: string
-  body: string
-}
-
-export interface MessageCenterTimelineItem {
-  label: string
-  at: string
-}
-
-export interface MessageCenterItem {
-  id: string
-  title: string
-  body: string
-  sender: string
-  sourceLabel: string
-  receivedAt: string
-  channel: string
-  status: MessageStatus
-  priority: MessagePriority
-  audience: string
-  owner: string
-  slaLabel: string
-  nextStep: string
-  suggestedReply: string
-  timeline: MessageCenterTimelineItem[]
-}
+export type {
+  MessageCenterItem,
+  MessageCenterMetric,
+  MessageCenterReplyTemplate,
+  MessageCenterTimelineItem,
+  MessagePriority,
+  MessageStatus,
+} from '../models/message-center'
 
 interface MessageCenterProps {
   metrics: MessageCenterMetric[]
@@ -77,6 +62,13 @@ const priorityLabels: Record<MessagePriority, string> = {
   low: '低',
 }
 
+const priorityFilterLabels: Record<MessagePriority | 'all', string> = {
+  all: '全部优先级',
+  high: '高优先级',
+  normal: '中优先级',
+  low: '低优先级',
+}
+
 const priorityTone: Record<MessagePriority, string> = {
   high: 'text-destructive',
   normal: 'text-foreground',
@@ -90,23 +82,33 @@ export function MessageCenter({
   scopeLabel,
 }: MessageCenterProps) {
   const [status, setStatus] = useState<MessageStatus | 'all'>('all')
+  const [priority, setPriority] = useState<MessagePriority | 'all'>('all')
+  const [owner, setOwner] = useState('all')
+  const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | undefined>(
     messages[0]?.id,
   )
   const [draft, setDraft] = useState(messages[0]?.suggestedReply ?? '')
 
+  const statusCounts = useMemo(
+    () => getMessageCenterStatusCounts(messages),
+    [messages],
+  )
+  const ownerOptions = useMemo(() => getMessageCenterOwners(messages), [messages])
   const filteredMessages = useMemo(
     () =>
-      messages.filter(
-        (message) => status === 'all' || message.status === status,
-      ),
-    [messages, status],
+      filterMessageCenterItems(messages, {
+        status,
+        priority,
+        owner,
+        query,
+      }),
+    [messages, owner, priority, query, status],
   )
 
   const selectedMessage =
     filteredMessages.find((message) => message.id === selectedId) ??
-    filteredMessages[0] ??
-    messages[0]
+    filteredMessages[0]
 
   const selectMessage = (message: MessageCenterItem | undefined) => {
     setSelectedId(message?.id)
@@ -154,57 +156,138 @@ export function MessageCenter({
                     )}
                     onClick={() => {
                       setStatus(item)
-                      const next = messages.find(
-                        (message) => item === 'all' || message.status === item,
-                      )
+                      const next = filterMessageCenterItems(messages, {
+                        status: item,
+                        priority,
+                        owner,
+                        query,
+                      })[0]
                       selectMessage(next)
                     }}
                   >
-                    {statusLabels[item]}
+                    {statusLabels[item]} {statusCounts[item]}
                   </button>
                 ),
               )}
             </div>
+
+            <label className="relative mt-4 block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  const next = filterMessageCenterItems(messages, {
+                    status,
+                    priority,
+                    owner,
+                    query: event.target.value,
+                  })[0]
+                  selectMessage(next)
+                }}
+                placeholder="搜索标题、发送人或渠道"
+              />
+            </label>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <select
+                className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                value={owner}
+                onChange={(event) => {
+                  setOwner(event.target.value)
+                  const next = filterMessageCenterItems(messages, {
+                    status,
+                    priority,
+                    owner: event.target.value,
+                    query,
+                  })[0]
+                  selectMessage(next)
+                }}
+              >
+                <option value="all">全部小组</option>
+                {ownerOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                value={priority}
+                onChange={(event) => {
+                  const nextPriority = event.target
+                    .value as MessagePriority | 'all'
+                  setPriority(nextPriority)
+                  const next = filterMessageCenterItems(messages, {
+                    status,
+                    priority: nextPriority,
+                    owner,
+                    query,
+                  })[0]
+                  selectMessage(next)
+                }}
+              >
+                {(
+                  Object.keys(priorityFilterLabels) as Array<
+                    MessagePriority | 'all'
+                  >
+                ).map((item) => (
+                  <option key={item} value={item}>
+                    {priorityFilterLabels[item]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              当前筛选 {filteredMessages.length} / {messages.length} 条
+            </p>
           </div>
 
           <div className="max-h-[28rem] overflow-y-auto">
-            {filteredMessages.map((message) => (
-              <button
-                key={message.id}
-                type="button"
-                className={cn(
-                  'flex w-full gap-3 border-b border-border p-4 text-left transition hover:bg-accent/70',
-                  selectedMessage?.id === message.id && 'bg-accent',
-                )}
-                onClick={() => selectMessage(message)}
-              >
-                <span className="mt-1 grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-                  <MessageSquare className="size-4" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-semibold text-foreground">
-                      {message.title}
+            {filteredMessages.length > 0 ? (
+              filteredMessages.map((message) => (
+                <button
+                  key={message.id}
+                  type="button"
+                  className={cn(
+                    'flex w-full gap-3 border-b border-border p-4 text-left transition hover:bg-accent/70',
+                    selectedMessage?.id === message.id && 'bg-accent',
+                  )}
+                  onClick={() => selectMessage(message)}
+                >
+                  <span className="mt-1 grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                    <MessageSquare className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-semibold text-foreground">
+                        {message.title}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-xs font-medium',
+                          priorityTone[message.priority],
+                        )}
+                      >
+                        P{priorityLabels[message.priority]}
+                      </span>
                     </span>
-                    <span
-                      className={cn(
-                        'text-xs font-medium',
-                        priorityTone[message.priority],
-                      )}
-                    >
-                      P{priorityLabels[message.priority]}
+                    <span className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                      {message.body}
+                    </span>
+                    <span className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span className="truncate">{message.sender}</span>
+                      <span>{message.receivedAt}</span>
                     </span>
                   </span>
-                  <span className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                    {message.body}
-                  </span>
-                  <span className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span className="truncate">{message.sender}</span>
-                    <span>{message.receivedAt}</span>
-                  </span>
-                </span>
-              </button>
-            ))}
+                </button>
+              ))
+            ) : (
+              <div className="grid min-h-56 place-items-center p-6 text-center text-sm text-muted-foreground">
+                没有匹配的消息
+              </div>
+            )}
           </div>
         </section>
 
@@ -242,7 +325,7 @@ export function MessageCenter({
               <MessageFact
                 icon={<UserRound className="size-4" />}
                 label="负责人"
-                value={selectedMessage.owner}
+                value={`${selectedMessage.owner} · ${selectedMessage.assignee}`}
               />
               <MessageFact
                 icon={<Clock3 className="size-4" />}
