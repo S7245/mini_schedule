@@ -43,6 +43,11 @@ export interface MessageCenterFilters {
   query?: string
 }
 
+export interface MessageCenterQueueView {
+  filteredMessages: MessageCenterItem[]
+  selectedMessage?: MessageCenterItem
+}
+
 export type MessageCenterStatusCounts = Record<MessageStatus | 'all', number>
 export type MessageCenterQueueAction = 'mark-read' | 'reply' | 'resolve'
 
@@ -111,6 +116,21 @@ export function filterMessageCenterItems(
 
     return matchesStatus && matchesPriority && matchesOwner && matchesQuery
   })
+}
+
+export function getMessageCenterQueueView(
+  messages: MessageCenterItem[],
+  filters: MessageCenterFilters = {},
+  selectedId?: string,
+): MessageCenterQueueView {
+  const filteredMessages = filterMessageCenterItems(messages, filters)
+
+  return {
+    filteredMessages,
+    selectedMessage:
+      filteredMessages.find((message) => message.id === selectedId) ??
+      filteredMessages[0],
+  }
 }
 
 export function updateMessageCenterQueueItem(

@@ -15,12 +15,13 @@ import {
 } from 'lucide-react'
 import { cn } from '../lib/cn'
 import {
-  filterMessageCenterItems,
+  getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
   updateMessageCenterQueueItem,
 } from '../models/message-center'
 import type {
+  MessageCenterFilters,
   MessageCenterItem,
   MessageCenterMetric,
   MessageCenterQueueAction,
@@ -94,6 +95,15 @@ export function MessageCenter({
   )
   const [draft, setDraft] = useState(messages[0]?.suggestedReply ?? '')
   const [activityMessage, setActivityMessage] = useState('草稿未发送')
+  const filters = useMemo<MessageCenterFilters>(
+    () => ({
+      status,
+      priority,
+      owner,
+      query,
+    }),
+    [owner, priority, query, status],
+  )
 
   const statusCounts = useMemo(
     () => getMessageCenterStatusCounts(queueMessages),
@@ -103,25 +113,21 @@ export function MessageCenter({
     () => getMessageCenterOwners(queueMessages),
     [queueMessages],
   )
-  const filteredMessages = useMemo(
-    () =>
-      filterMessageCenterItems(queueMessages, {
-        status,
-        priority,
-        owner,
-        query,
-      }),
-    [owner, priority, query, queueMessages, status],
+  const { filteredMessages, selectedMessage } = useMemo(
+    () => getMessageCenterQueueView(queueMessages, filters, selectedId),
+    [filters, queueMessages, selectedId],
   )
-
-  const selectedMessage =
-    filteredMessages.find((message) => message.id === selectedId) ??
-    filteredMessages[0]
 
   const selectMessage = (message: MessageCenterItem | undefined) => {
     setSelectedId(message?.id)
     setDraft(message?.suggestedReply ?? '')
     setActivityMessage('草稿未发送')
+  }
+
+  const selectFirstMatchingMessage = (nextFilters: MessageCenterFilters) => {
+    selectMessage(
+      getMessageCenterQueueView(queueMessages, nextFilters).selectedMessage,
+    )
   }
 
   const applyQueueAction = (
@@ -137,14 +143,11 @@ export function MessageCenter({
         body: draft,
       },
     )
-    const nextFiltered = filterMessageCenterItems(nextMessages, {
-      status,
-      priority,
-      owner,
-      query,
-    })
-    const visibleMessage =
-      nextFiltered.find((item) => item.id === message.id) ?? nextFiltered[0]
+    const visibleMessage = getMessageCenterQueueView(
+      nextMessages,
+      filters,
+      message.id,
+    ).selectedMessage
 
     setQueueMessages(nextMessages)
     setSelectedId(visibleMessage?.id)
@@ -199,13 +202,7 @@ export function MessageCenter({
                     )}
                     onClick={() => {
                       setStatus(item)
-                      const next = filterMessageCenterItems(queueMessages, {
-                        status: item,
-                        priority,
-                        owner,
-                        query,
-                      })[0]
-                      selectMessage(next)
+                      selectFirstMatchingMessage({ ...filters, status: item })
                     }}
                   >
                     {statusLabels[item]} {statusCounts[item]}
@@ -221,13 +218,10 @@ export function MessageCenter({
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value)
-                  const next = filterMessageCenterItems(queueMessages, {
-                    status,
-                    priority,
-                    owner,
+                  selectFirstMatchingMessage({
+                    ...filters,
                     query: event.target.value,
-                  })[0]
-                  selectMessage(next)
+                  })
                 }}
                 placeholder="搜索标题、发送人或渠道"
               />
@@ -239,13 +233,10 @@ export function MessageCenter({
                 value={owner}
                 onChange={(event) => {
                   setOwner(event.target.value)
-                  const next = filterMessageCenterItems(queueMessages, {
-                    status,
-                    priority,
+                  selectFirstMatchingMessage({
+                    ...filters,
                     owner: event.target.value,
-                    query,
-                  })[0]
-                  selectMessage(next)
+                  })
                 }}
               >
                 <option value="all">全部小组</option>
@@ -262,13 +253,10 @@ export function MessageCenter({
                   const nextPriority = event.target
                     .value as MessagePriority | 'all'
                   setPriority(nextPriority)
-                  const next = filterMessageCenterItems(queueMessages, {
-                    status,
+                  selectFirstMatchingMessage({
+                    ...filters,
                     priority: nextPriority,
-                    owner,
-                    query,
-                  })[0]
-                  selectMessage(next)
+                  })
                 }}
               >
                 {(

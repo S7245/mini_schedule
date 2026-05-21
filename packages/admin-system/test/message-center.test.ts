@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   filterMessageCenterItems,
+  getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
   updateMessageCenterQueueItem,
@@ -98,6 +99,30 @@ test('message center filters by status priority owner and query', () => {
 test('message center query searches sender and assignee fields', () => {
   assert.equal(filterMessageCenterItems(messages, { query: '青岚' }).length, 1)
   assert.equal(filterMessageCenterItems(messages, { query: '唐雨' }).length, 1)
+})
+
+test('message center queue view keeps the selected visible message', () => {
+  const view = getMessageCenterQueueView(
+    messages,
+    { status: 'open' },
+    'course-cover',
+  )
+
+  assert.equal(view.selectedMessage?.id, 'course-cover')
+  assert.deepEqual(
+    view.filteredMessages.map((message) => message.id),
+    ['course-cover'],
+  )
+})
+
+test('message center queue view falls back when selection is filtered out', () => {
+  const view = getMessageCenterQueueView(
+    messages,
+    { status: 'unread' },
+    'course-cover',
+  )
+
+  assert.equal(view.selectedMessage?.id, 'brand-audit')
 })
 
 test('message center can move unread messages into the open queue', () => {
