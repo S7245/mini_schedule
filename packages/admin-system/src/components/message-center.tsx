@@ -9,6 +9,7 @@ import {
   Inbox,
   MessageSquare,
   Send,
+  Sparkles,
   UserRound,
 } from 'lucide-react'
 import { cn } from '../lib/cn'
@@ -22,6 +23,16 @@ export interface MessageCenterMetric {
   detail: string
 }
 
+export interface MessageCenterReplyTemplate {
+  label: string
+  body: string
+}
+
+export interface MessageCenterTimelineItem {
+  label: string
+  at: string
+}
+
 export interface MessageCenterItem {
   id: string
   title: string
@@ -29,16 +40,21 @@ export interface MessageCenterItem {
   sender: string
   sourceLabel: string
   receivedAt: string
+  channel: string
   status: MessageStatus
   priority: MessagePriority
   audience: string
   owner: string
+  slaLabel: string
   nextStep: string
+  suggestedReply: string
+  timeline: MessageCenterTimelineItem[]
 }
 
 interface MessageCenterProps {
   metrics: MessageCenterMetric[]
   messages: MessageCenterItem[]
+  replyTemplates: MessageCenterReplyTemplate[]
   scopeLabel: string
 }
 
@@ -70,12 +86,14 @@ const priorityTone: Record<MessagePriority, string> = {
 export function MessageCenter({
   metrics,
   messages,
+  replyTemplates,
   scopeLabel,
 }: MessageCenterProps) {
   const [status, setStatus] = useState<MessageStatus | 'all'>('all')
   const [selectedId, setSelectedId] = useState<string | undefined>(
     messages[0]?.id,
   )
+  const [draft, setDraft] = useState(messages[0]?.suggestedReply ?? '')
 
   const filteredMessages = useMemo(
     () =>
@@ -89,6 +107,11 @@ export function MessageCenter({
     filteredMessages.find((message) => message.id === selectedId) ??
     filteredMessages[0] ??
     messages[0]
+
+  const selectMessage = (message: MessageCenterItem | undefined) => {
+    setSelectedId(message?.id)
+    setDraft(message?.suggestedReply ?? '')
+  }
 
   return (
     <div className="space-y-5">
@@ -134,7 +157,7 @@ export function MessageCenter({
                       const next = messages.find(
                         (message) => item === 'all' || message.status === item,
                       )
-                      setSelectedId(next?.id)
+                      selectMessage(next)
                     }}
                   >
                     {statusLabels[item]}
@@ -153,7 +176,7 @@ export function MessageCenter({
                   'flex w-full gap-3 border-b border-border p-4 text-left transition hover:bg-accent/70',
                   selectedMessage?.id === message.id && 'bg-accent',
                 )}
-                onClick={() => setSelectedId(message.id)}
+                onClick={() => selectMessage(message)}
               >
                 <span className="mt-1 grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
                   <MessageSquare className="size-4" />
@@ -203,6 +226,9 @@ export function MessageCenter({
                 <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                   {selectedMessage.audience}
                 </span>
+                <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+                  {selectedMessage.channel}
+                </span>
               </div>
               <h2 className="mt-4 text-xl font-semibold text-foreground">
                 {selectedMessage.title}
@@ -220,8 +246,8 @@ export function MessageCenter({
               />
               <MessageFact
                 icon={<Clock3 className="size-4" />}
-                label="收到时间"
-                value={selectedMessage.receivedAt}
+                label="SLA"
+                value={selectedMessage.slaLabel}
               />
               <MessageFact
                 icon={<AlertCircle className="size-4" />}
@@ -230,34 +256,86 @@ export function MessageCenter({
               />
             </div>
 
-            <div className="mx-5 rounded-lg border border-border bg-background p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    下一步
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    {selectedMessage.nextStep}
-                  </p>
+            <div className="grid gap-4 px-5 md:grid-cols-[1fr_minmax(16rem,20rem)]">
+              <div className="rounded-lg border border-border bg-background p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      下一步
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {selectedMessage.nextStep}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-border bg-background p-4">
+                <p className="text-sm font-semibold text-foreground">
+                  处理记录
+                </p>
+                <div className="mt-3 space-y-3">
+                  {selectedMessage.timeline.map((item) => (
+                    <div key={`${item.label}-${item.at}`} className="flex gap-3">
+                      <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-foreground">
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.at}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="mt-auto flex flex-wrap items-center justify-end gap-2 border-t border-border p-5">
-              <button
-                type="button"
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent"
-              >
-                标记已读
-              </button>
-              <button
-                type="button"
-                className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-              >
-                <Send className="size-4" />
-                回复
-              </button>
+            <div className="mt-auto space-y-3 border-t border-border p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Sparkles className="size-4 text-primary" />
+                  快捷回复
+                </span>
+                {replyTemplates.map((template) => (
+                  <button
+                    key={template.label}
+                    type="button"
+                    className="h-8 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground transition hover:bg-accent"
+                    onClick={() => setDraft(template.body)}
+                  >
+                    {template.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="min-h-24 w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm leading-6 text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder="输入给对方的回复内容"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                  草稿未发送
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent"
+                  >
+                    标记已读
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                  >
+                    <Send className="size-4" />
+                    回复
+                  </button>
+                </div>
+              </div>
             </div>
           </section>
         ) : (
