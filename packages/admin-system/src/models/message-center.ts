@@ -30,6 +30,7 @@ export interface MessageCenterItem {
   audience: string
   owner: string
   assignee: string
+  labels: string[]
   slaLabel: string
   nextStep: string
   suggestedReply: string
@@ -40,6 +41,7 @@ export interface MessageCenterFilters {
   status?: MessageStatus | 'all'
   priority?: MessagePriority | 'all'
   owner?: string
+  label?: string
   query?: string
 }
 
@@ -54,11 +56,13 @@ export type MessageCenterQueueAction =
   | 'reply'
   | 'resolve'
   | 'assign'
+  | 'label'
 
 export interface MessageCenterQueueUpdate {
   action: MessageCenterQueueAction
   actor?: string
   assignee?: string
+  label?: string
   body?: string
   at?: string
 }
@@ -103,12 +107,17 @@ export function getMessageCenterAssignees(
   )
 }
 
+export function getMessageCenterLabels(messages: MessageCenterItem[]): string[] {
+  return Array.from(new Set(messages.flatMap((message) => message.labels)))
+}
+
 export function filterMessageCenterItems(
   messages: MessageCenterItem[],
   {
     status = 'all',
     priority = 'all',
     owner = 'all',
+    label = 'all',
     query = '',
   }: MessageCenterFilters = {},
 ): MessageCenterItem[] {
@@ -119,6 +128,7 @@ export function filterMessageCenterItems(
     const matchesPriority =
       priority === 'all' || message.priority === priority
     const matchesOwner = owner === 'all' || message.owner === owner
+    const matchesLabel = label === 'all' || message.labels.includes(label)
     const matchesQuery =
       normalizedQuery.length === 0 ||
       [
@@ -130,12 +140,19 @@ export function filterMessageCenterItems(
         message.audience,
         message.owner,
         message.assignee,
+        ...message.labels,
       ]
         .join(' ')
         .toLocaleLowerCase()
         .includes(normalizedQuery)
 
-    return matchesStatus && matchesPriority && matchesOwner && matchesQuery
+    return (
+      matchesStatus &&
+      matchesPriority &&
+      matchesOwner &&
+      matchesLabel &&
+      matchesQuery
+    )
   })
 }
 
@@ -161,6 +178,7 @@ export function updateMessageCenterQueueItem(
     action,
     actor = '当前处理人',
     assignee,
+    label,
     body = '',
     at = '刚刚',
   }: MessageCenterQueueUpdate,
@@ -203,6 +221,24 @@ export function updateMessageCenterQueueItem(
       }
     }
 
+    if (action === 'label') {
+      const nextLabel = label?.trim()
+
+      if (!nextLabel || message.labels.includes(nextLabel)) {
+        return message
+      }
+
+      return {
+        ...message,
+        labels: [...message.labels, nextLabel],
+        status: message.status === 'resolved' ? 'resolved' : 'open',
+        timeline: [
+          ...message.timeline,
+          { label: `${actor} 添加标签 ${nextLabel}`, at },
+        ],
+      }
+    }
+
     const replyPreview = body.trim()
     const replyLabel =
       replyPreview.length > 0
@@ -240,6 +276,7 @@ export function applyMessageCenterQueueAction(
     activityMessage: getMessageCenterActivityMessage(
       update.action,
       nextMessages.find((message) => message.id === selectedId),
+      update.label,
     ),
   }
 }
@@ -247,6 +284,7 @@ export function applyMessageCenterQueueAction(
 function getMessageCenterActivityMessage(
   action: MessageCenterQueueAction,
   updatedMessage: MessageCenterItem | undefined,
+  label?: string,
 ): string {
   if (action === 'reply') {
     return '回复已记录到处理时间线'
@@ -258,6 +296,10 @@ function getMessageCenterActivityMessage(
 
   if (action === 'assign') {
     return `消息已转交给 ${updatedMessage?.assignee ?? ''}`
+  }
+
+  if (action === 'label') {
+    return label ? `已添加标签 ${label}` : '标签未变更'
   }
 
   return '消息已转入处理中'

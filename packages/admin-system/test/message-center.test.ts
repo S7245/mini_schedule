@@ -5,6 +5,7 @@ import {
   applyMessageCenterQueueAction,
   filterMessageCenterItems,
   getMessageCenterAssignees,
+  getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
@@ -26,6 +27,7 @@ const messages: MessageCenterItem[] = [
     audience: '平台运营',
     owner: '运营组',
     assignee: '林晨',
+    labels: ['入驻审核', '资料复核'],
     slaLabel: '2 小时内',
     nextStep: '核对资料并更新品牌状态。',
     suggestedReply: '我们会尽快复核。',
@@ -44,6 +46,7 @@ const messages: MessageCenterItem[] = [
     audience: '平台运营',
     owner: '内容组',
     assignee: '唐雨',
+    labels: ['内容异常'],
     slaLabel: '今日内',
     nextStep: '抽查 cover_url。',
     suggestedReply: '我们会核对封面地址。',
@@ -62,6 +65,7 @@ const messages: MessageCenterItem[] = [
     audience: '平台运营',
     owner: '财务组',
     assignee: '系统',
+    labels: ['系统通知'],
     slaLabel: '无需处理',
     nextStep: '无需人工处理。',
     suggestedReply: '无需回复。',
@@ -94,6 +98,15 @@ test('message center exposes stable assignee options', () => {
   ])
 })
 
+test('message center exposes stable label filters', () => {
+  assert.deepEqual(getMessageCenterLabels(messages), [
+    '入驻审核',
+    '资料复核',
+    '内容异常',
+    '系统通知',
+  ])
+})
+
 test('message center filters by status priority owner and query', () => {
   const filtered = filterMessageCenterItems(messages, {
     status: 'open',
@@ -106,9 +119,21 @@ test('message center filters by status priority owner and query', () => {
   assert.equal(filtered[0]?.id, 'course-cover')
 })
 
+test('message center filters by labels', () => {
+  const filtered = filterMessageCenterItems(messages, {
+    label: '资料复核',
+  })
+
+  assert.deepEqual(
+    filtered.map((message) => message.id),
+    ['brand-audit'],
+  )
+})
+
 test('message center query searches sender and assignee fields', () => {
   assert.equal(filterMessageCenterItems(messages, { query: '青岚' }).length, 1)
   assert.equal(filterMessageCenterItems(messages, { query: '唐雨' }).length, 1)
+  assert.equal(filterMessageCenterItems(messages, { query: '内容异常' }).length, 1)
 })
 
 test('message center queue view keeps the selected visible message', () => {
@@ -188,6 +213,27 @@ test('message center handoff keeps resolved messages closed', () => {
 
   assert.equal(updated[2]?.status, 'resolved')
   assert.equal(updated[2]?.assignee, '林晨')
+})
+
+test('message center can add triage labels once', () => {
+  const updated = updateMessageCenterQueueItem(messages, 'course-cover', {
+    action: 'label',
+    actor: '唐雨',
+    label: '需研发确认',
+  })
+  const unchanged = updateMessageCenterQueueItem(updated, 'course-cover', {
+    action: 'label',
+    actor: '唐雨',
+    label: '需研发确认',
+  })
+
+  assert.equal(updated[1]?.status, 'open')
+  assert.deepEqual(updated[1]?.labels, ['内容异常', '需研发确认'])
+  assert.equal(
+    updated[1]?.timeline.at(-1)?.label,
+    '唐雨 添加标签 需研发确认',
+  )
+  assert.equal(unchanged[1]?.timeline.length, updated[1]?.timeline.length)
 })
 
 test('message center action result keeps the composer aligned with the visible queue', () => {

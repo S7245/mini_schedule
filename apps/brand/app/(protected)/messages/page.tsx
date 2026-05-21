@@ -41,6 +41,7 @@ const messages: MessageCenterItem[] = [
     audience: '品牌教练',
     owner: '教练组',
     assignee: '陈教练',
+    labels: ['学员咨询', '课程适配'],
     slaLabel: '今日内',
     nextStep: '查看学员近期训练记录，确认课程难度后回复可替代课程和训练频次。',
     suggestedReply:
@@ -63,6 +64,7 @@ const messages: MessageCenterItem[] = [
     audience: '内容运营',
     owner: '课程运营',
     assignee: '许宁',
+    labels: ['内容补全', '课程封面'],
     slaLabel: '2 个工作日',
     nextStep: '进入课程详情页补充 cover_url，确认图片可公开访问后保存。',
     suggestedReply:
@@ -85,6 +87,7 @@ const messages: MessageCenterItem[] = [
     audience: '品牌运营',
     owner: '运营组',
     assignee: '刘可',
+    labels: ['训练跟进', '活跃预警'],
     slaLabel: '今日内',
     nextStep: '筛选训练记录列表，联系缺失记录学员确认训练状态并补齐必要记录。',
     suggestedReply:
@@ -107,6 +110,7 @@ const messages: MessageCenterItem[] = [
     audience: '品牌管理员',
     owner: '系统',
     assignee: '系统',
+    labels: ['系统通知', '资料同步'],
     slaLabel: '无需处理',
     nextStep: '无需人工处理，如联系人信息变化再联系平台运营更新。',
     suggestedReply:

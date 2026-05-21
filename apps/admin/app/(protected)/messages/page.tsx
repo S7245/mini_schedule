@@ -41,6 +41,7 @@ const messages: MessageCenterItem[] = [
     audience: '平台运营',
     owner: '运营组',
     assignee: '林晨',
+    labels: ['入驻审核', '资料复核'],
     slaLabel: '2 小时内',
     nextStep:
       '进入品牌详情页核对资料，确认无误后将品牌状态从 pending 调整为 active。',
@@ -64,6 +65,7 @@ const messages: MessageCenterItem[] = [
     audience: '客服支持',
     owner: '客服组',
     assignee: '周然',
+    labels: ['账号支持', '身份核验'],
     slaLabel: '今日内',
     nextStep:
       '联系品牌联系人核验手机号，完成后在管理员管理中创建临时密码并通知对方更新。',
@@ -87,6 +89,7 @@ const messages: MessageCenterItem[] = [
     audience: '产品运营',
     owner: '产品组',
     assignee: '何知',
+    labels: ['功能咨询', '报表需求'],
     slaLabel: '2 个工作日',
     nextStep:
       '记录到后台报表需求池，回复当前版本暂不支持导出，并提供训练记录页筛选替代方案。',
@@ -110,6 +113,7 @@ const messages: MessageCenterItem[] = [
     audience: '平台运营',
     owner: '内容组',
     assignee: '唐雨',
+    labels: ['内容异常', '图片资源'],
     slaLabel: '今日内',
     nextStep:
       '抽查课程详情页的 cover_url，若 URL 可访问则继续排查前端图片域名配置。',
@@ -133,6 +137,7 @@ const messages: MessageCenterItem[] = [
     audience: '平台运营',
     owner: '财务组',
     assignee: '系统',
+    labels: ['系统通知', '财务归档'],
     slaLabel: '无需处理',
     nextStep: '无需人工处理，等待后续财务模块接入真实发票数据。',
     suggestedReply:

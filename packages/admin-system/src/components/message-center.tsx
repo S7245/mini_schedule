@@ -11,12 +11,14 @@ import {
   Search,
   Send,
   Sparkles,
+  Tag,
   UserRound,
 } from 'lucide-react'
 import { cn } from '../lib/cn'
 import {
   applyMessageCenterQueueAction,
   getMessageCenterAssignees,
+  getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterStatusCounts,
@@ -90,6 +92,7 @@ export function MessageCenter({
   const [status, setStatus] = useState<MessageStatus | 'all'>('all')
   const [priority, setPriority] = useState<MessagePriority | 'all'>('all')
   const [owner, setOwner] = useState('all')
+  const [label, setLabel] = useState('all')
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | undefined>(
     messages[0]?.id,
@@ -98,15 +101,17 @@ export function MessageCenter({
   const [handoffAssignee, setHandoffAssignee] = useState(
     messages[0]?.assignee ?? '',
   )
+  const [triageLabel, setTriageLabel] = useState(messages[0]?.labels[0] ?? '')
   const [activityMessage, setActivityMessage] = useState('草稿未发送')
   const filters = useMemo<MessageCenterFilters>(
     () => ({
       status,
       priority,
       owner,
+      label,
       query,
     }),
-    [owner, priority, query, status],
+    [label, owner, priority, query, status],
   )
 
   const statusCounts = useMemo(
@@ -121,6 +126,10 @@ export function MessageCenter({
     () => getMessageCenterAssignees(queueMessages),
     [queueMessages],
   )
+  const labelOptions = useMemo(
+    () => getMessageCenterLabels(queueMessages),
+    [queueMessages],
+  )
   const { filteredMessages, selectedMessage } = useMemo(
     () => getMessageCenterQueueView(queueMessages, filters, selectedId),
     [filters, queueMessages, selectedId],
@@ -130,6 +139,7 @@ export function MessageCenter({
     setSelectedId(message?.id)
     setDraft(message?.suggestedReply ?? '')
     setHandoffAssignee(message?.assignee ?? '')
+    setTriageLabel(message?.labels[0] ?? labelOptions[0] ?? '')
     setActivityMessage('草稿未发送')
   }
 
@@ -151,6 +161,7 @@ export function MessageCenter({
         action,
         actor: message.assignee,
         assignee: handoffAssignee,
+        label: triageLabel,
         body: draft,
       },
     )
@@ -159,6 +170,9 @@ export function MessageCenter({
     setSelectedId(result.view.selectedMessage?.id)
     setDraft(result.draft)
     setHandoffAssignee(result.handoffAssignee)
+    setTriageLabel(
+      result.view.selectedMessage?.labels[0] ?? labelOptions[0] ?? '',
+    )
     setActivityMessage(result.activityMessage)
   }
 
@@ -270,6 +284,24 @@ export function MessageCenter({
                   </option>
                 ))}
               </select>
+              <select
+                className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 sm:col-span-2 lg:col-span-1 xl:col-span-2"
+                value={label}
+                onChange={(event) => {
+                  setLabel(event.target.value)
+                  selectFirstMatchingMessage({
+                    ...filters,
+                    label: event.target.value,
+                  })
+                }}
+              >
+                <option value="all">全部标签</option>
+                {labelOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
               当前筛选 {filteredMessages.length} / {queueMessages.length} 条
@@ -344,6 +376,14 @@ export function MessageCenter({
                 <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                   {selectedMessage.channel}
                 </span>
+                {selectedMessage.labels.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                  >
+                    {item}
+                  </span>
+                ))}
               </div>
               <h2 className="mt-4 text-xl font-semibold text-foreground">
                 {selectedMessage.title}
@@ -462,6 +502,31 @@ export function MessageCenter({
                     onClick={() => applyQueueAction('assign', selectedMessage)}
                   >
                     转交
+                  </button>
+                  <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm text-foreground">
+                    <Tag className="size-4 text-muted-foreground" />
+                    <select
+                      className="h-full bg-transparent text-sm outline-none"
+                      value={triageLabel}
+                      onChange={(event) => setTriageLabel(event.target.value)}
+                    >
+                      {labelOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={
+                      selectedMessage.labels.includes(triageLabel) ||
+                      triageLabel.length === 0
+                    }
+                    onClick={() => applyQueueAction('label', selectedMessage)}
+                  >
+                    添加标签
                   </button>
                   <button
                     type="button"
