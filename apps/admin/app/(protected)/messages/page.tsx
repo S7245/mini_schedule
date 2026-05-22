@@ -46,6 +46,20 @@ const messages: MessageCenterItem[] = [
       '先核对营业执照主体和联系人手机号，再决定是否转交客服补充资料。',
     ],
     followUpAt: '今日 14:00',
+    relatedRecords: [
+      {
+        label: '品牌资料',
+        value: '青岚普拉提',
+        href: '/brands',
+        kind: '品牌',
+      },
+      {
+        label: '平台管理员',
+        value: '林晨',
+        href: '/admins',
+        kind: '员工',
+      },
+    ],
     slaLabel: '2 小时内',
     nextStep:
       '进入品牌详情页核对资料，确认无误后将品牌状态从 pending 调整为 active。',
@@ -74,6 +88,20 @@ const messages: MessageCenterItem[] = [
       '不要直接发送临时密码，先确认品牌联系人和管理员手机号一致。',
     ],
     followUpAt: '今日 17:00',
+    relatedRecords: [
+      {
+        label: '品牌资料',
+        value: '北岸健身',
+        href: '/brands',
+        kind: '品牌',
+      },
+      {
+        label: '账号处理人',
+        value: '周然',
+        href: '/admins',
+        kind: '员工',
+      },
+    ],
     slaLabel: '今日内',
     nextStep:
       '联系品牌联系人核验手机号，完成后在管理员管理中创建临时密码并通知对方更新。',
@@ -100,6 +128,20 @@ const messages: MessageCenterItem[] = [
     labels: ['功能咨询', '报表需求'],
     internalNotes: ['归档到报表需求池，避免承诺具体导出上线时间。'],
     followUpAt: '',
+    relatedRecords: [
+      {
+        label: '品牌资料',
+        value: '云阶瑜伽',
+        href: '/brands',
+        kind: '品牌',
+      },
+      {
+        label: '运营看板',
+        value: '训练数据导出',
+        href: '/dashboard',
+        kind: '需求',
+      },
+    ],
     slaLabel: '2 个工作日',
     nextStep:
       '记录到后台报表需求池，回复当前版本暂不支持导出，并提供训练记录页筛选替代方案。',
@@ -128,6 +170,20 @@ const messages: MessageCenterItem[] = [
       '先抽查 cover_url 是否可公网访问，再判断是否需要前端图片域名配置。',
     ],
     followUpAt: '明日 10:00',
+    relatedRecords: [
+      {
+        label: '品牌资料',
+        value: 'Loop Studio',
+        href: '/brands',
+        kind: '品牌',
+      },
+      {
+        label: '内容处理人',
+        value: '唐雨',
+        href: '/admins',
+        kind: '员工',
+      },
+    ],
     slaLabel: '今日内',
     nextStep:
       '抽查课程详情页的 cover_url，若 URL 可访问则继续排查前端图片域名配置。',
@@ -154,6 +210,14 @@ const messages: MessageCenterItem[] = [
     labels: ['系统通知', '财务归档'],
     internalNotes: ['系统自动归档通知，当前不需要人工客服跟进。'],
     followUpAt: '',
+    relatedRecords: [
+      {
+        label: '平台概览',
+        value: '品牌服务费发票',
+        href: '/dashboard',
+        kind: '系统',
+      },
+    ],
     slaLabel: '无需处理',
     nextStep: '无需人工处理，等待后续财务模块接入真实发票数据。',
     suggestedReply:

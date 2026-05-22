@@ -22,6 +22,13 @@ export interface MessageCenterTimelineItem {
   at: string
 }
 
+export interface MessageCenterRelatedRecord {
+  label: string
+  value: string
+  href: string
+  kind: string
+}
+
 export interface MessageCenterItem {
   id: string
   title: string
@@ -38,6 +45,7 @@ export interface MessageCenterItem {
   labels: string[]
   internalNotes: string[]
   followUpAt: string
+  relatedRecords: MessageCenterRelatedRecord[]
   slaLabel: string
   nextStep: string
   suggestedReply: string
@@ -201,6 +209,11 @@ export function filterMessageCenterItems(
         message.nextStep,
         ...message.internalNotes,
         ...message.labels,
+        ...message.relatedRecords.flatMap((record) => [
+          record.label,
+          record.value,
+          record.kind,
+        ]),
       ]
         .join(' ')
         .toLocaleLowerCase()

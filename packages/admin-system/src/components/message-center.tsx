@@ -6,6 +6,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  ExternalLink,
   Inbox,
   MessageSquare,
   Search,
@@ -33,6 +34,7 @@ import type {
   MessageCenterMetric,
   MessageCenterQueueAction,
   MessageCenterReplyTemplate,
+  MessageCenterRelatedRecord,
   MessagePriority,
   MessageStatus,
 } from '../models/message-center'
@@ -43,6 +45,7 @@ export type {
   MessageCenterMetric,
   MessageCenterQueueAction,
   MessageCenterReplyTemplate,
+  MessageCenterRelatedRecord,
   MessageCenterTimelineItem,
   MessagePriority,
   MessageStatus,
@@ -481,6 +484,18 @@ export function MessageCenter({
 
                 <div className="rounded-lg border border-border bg-background p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <ExternalLink className="size-4 text-primary" />
+                    关联记录
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {selectedMessage.relatedRecords.map((record) => (
+                      <RelatedRecordLink key={record.href} record={record} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <StickyNote className="size-4 text-primary" />
                     内部备注
                   </div>
@@ -681,6 +696,28 @@ export function MessageCenter({
         )}
       </div>
     </div>
+  )
+}
+
+function RelatedRecordLink({ record }: { record: MessageCenterRelatedRecord }) {
+  return (
+    <a
+      className="group rounded-md border border-border bg-card px-3 py-2 text-sm transition hover:border-primary/40 hover:bg-accent"
+      href={record.href}
+    >
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          {record.kind}
+        </span>
+        <ExternalLink className="size-3.5 text-muted-foreground transition group-hover:text-primary" />
+      </span>
+      <span className="mt-1 block truncate font-semibold text-foreground">
+        {record.value}
+      </span>
+      <span className="mt-1 block truncate text-xs text-muted-foreground">
+        {record.label}
+      </span>
+    </a>
   )
 }
 
