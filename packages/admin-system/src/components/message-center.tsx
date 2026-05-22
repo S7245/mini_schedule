@@ -20,10 +20,10 @@ import {
   applyMessageCenterQueueAction,
   getMessageCenterAssignees,
   getMessageCenterComposerState,
-  getMessageCenterFollowUpOptions,
   getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
+  getMessageCenterScheduleOptions,
   getMessageCenterStatusCounts,
 } from '../models/message-center'
 import type {
@@ -148,21 +148,9 @@ export function MessageCenter({
     () => getMessageCenterLabels(queueMessages),
     [queueMessages],
   )
-  const queuedFollowUpOptions = useMemo(
-    () => getMessageCenterFollowUpOptions(queueMessages),
-    [queueMessages],
-  )
   const scheduleOptions = useMemo(
-    () =>
-      Array.from(
-        new Map(
-          [
-            ...followUpOptions,
-            ...queuedFollowUpOptions.map((value) => ({ label: value, value })),
-          ].map((item) => [item.value, item]),
-        ).values(),
-      ),
-    [followUpOptions, queuedFollowUpOptions],
+    () => getMessageCenterScheduleOptions(queueMessages, followUpOptions),
+    [followUpOptions, queueMessages],
   )
   const { filteredMessages, selectedMessage } = useMemo(
     () => getMessageCenterQueueView(queueMessages, filters, selectedId),

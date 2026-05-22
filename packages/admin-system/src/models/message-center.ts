@@ -147,6 +147,23 @@ export function getMessageCenterFollowUpOptions(
   )
 }
 
+export function getMessageCenterScheduleOptions(
+  messages: MessageCenterItem[],
+  defaultOptions: MessageCenterFollowUpOption[],
+): MessageCenterFollowUpOption[] {
+  return Array.from(
+    new Map(
+      [
+        ...defaultOptions,
+        ...getMessageCenterFollowUpOptions(messages).map((value) => ({
+          label: value,
+          value,
+        })),
+      ].map((option) => [option.value, option]),
+    ).values(),
+  )
+}
+
 export function filterMessageCenterItems(
   messages: MessageCenterItem[],
   {

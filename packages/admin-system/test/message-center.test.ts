@@ -10,6 +10,7 @@ import {
   getMessageCenterLabels,
   getMessageCenterQueueView,
   getMessageCenterOwners,
+  getMessageCenterScheduleOptions,
   getMessageCenterStatusCounts,
   updateMessageCenterQueueItem,
   type MessageCenterItem,
@@ -117,6 +118,33 @@ test('message center exposes stable label filters', () => {
 
 test('message center exposes stable follow-up options', () => {
   assert.deepEqual(getMessageCenterFollowUpOptions(messages), ['今日 14:00'])
+})
+
+test('message center combines default and queued follow-up schedule options', () => {
+  assert.deepEqual(
+    getMessageCenterScheduleOptions(messages, [
+      { label: '今日 18:00', value: '今日 18:00' },
+      { label: '今日 14:00', value: '今日 14:00' },
+      { label: '明日 10:00', value: '明日 10:00' },
+    ]),
+    [
+      { label: '今日 18:00', value: '今日 18:00' },
+      { label: '今日 14:00', value: '今日 14:00' },
+      { label: '明日 10:00', value: '明日 10:00' },
+    ],
+  )
+
+  assert.deepEqual(
+    getMessageCenterScheduleOptions(messages, [
+      { label: '今日 18:00', value: '今日 18:00' },
+      { label: '明日 10:00', value: '明日 10:00' },
+    ]),
+    [
+      { label: '今日 18:00', value: '今日 18:00' },
+      { label: '明日 10:00', value: '明日 10:00' },
+      { label: '今日 14:00', value: '今日 14:00' },
+    ],
+  )
 })
 
 test('message center filters by status priority owner and query', () => {
