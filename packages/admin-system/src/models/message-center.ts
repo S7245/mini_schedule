@@ -98,6 +98,11 @@ export interface MessageCenterQueueActionResult {
   activityMessage: string
 }
 
+export interface MessageCenterComposerStateOptions {
+  activityMessage?: string
+  followUpOptions?: MessageCenterFollowUpOption[]
+}
+
 export interface MessageCenterComposerState {
   draft: string
   handoffAssignee: string
@@ -248,14 +253,21 @@ export function getMessageCenterQueueView(
 export function getMessageCenterComposerState(
   selectedMessage: MessageCenterItem | undefined,
   labelOptions: string[],
-  activityMessage = '草稿未发送',
+  options: string | MessageCenterComposerStateOptions = {},
 ): MessageCenterComposerState {
+  const activityMessage =
+    typeof options === 'string'
+      ? options
+      : (options.activityMessage ?? '草稿未发送')
+  const followUpOptions =
+    typeof options === 'string' ? [] : (options.followUpOptions ?? [])
+
   return {
     draft: selectedMessage?.suggestedReply ?? '',
     handoffAssignee: selectedMessage?.assignee ?? '',
     triageLabel: selectedMessage?.labels[0] ?? labelOptions[0] ?? '',
     internalNote: '',
-    followUpAt: selectedMessage?.followUpAt ?? '',
+    followUpAt: selectedMessage?.followUpAt || followUpOptions[0]?.value || '',
     activityMessage,
   }
 }
@@ -381,6 +393,7 @@ export function applyMessageCenterQueueAction(
   selectedId: string,
   filters: MessageCenterFilters,
   update: MessageCenterQueueUpdate,
+  options: MessageCenterComposerStateOptions = {},
 ): MessageCenterQueueActionResult {
   const nextMessages = updateMessageCenterQueueItem(
     messages,
@@ -391,13 +404,16 @@ export function applyMessageCenterQueueAction(
   const composerState = getMessageCenterComposerState(
     view.selectedMessage,
     getMessageCenterLabels(nextMessages),
-    getMessageCenterActivityMessage(
-      update.action,
-      nextMessages.find((message) => message.id === selectedId),
-      update.label,
-      update.note,
-      update.followUpAt,
-    ),
+    {
+      ...options,
+      activityMessage: getMessageCenterActivityMessage(
+        update.action,
+        nextMessages.find((message) => message.id === selectedId),
+        update.label,
+        update.note,
+        update.followUpAt,
+      ),
+    },
   )
 
   return {

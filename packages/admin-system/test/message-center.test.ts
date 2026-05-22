@@ -284,6 +284,22 @@ test('message center composer state follows selected queue messages', () => {
   })
 })
 
+test('message center composer state defaults unscheduled messages to the first schedule option', () => {
+  assert.deepEqual(
+    getMessageCenterComposerState(messages[1], ['内容异常'], {
+      followUpOptions: [{ label: '明日 10:00', value: '明日 10:00' }],
+    }),
+    {
+      draft: '我们会核对封面地址。',
+      handoffAssignee: '唐雨',
+      triageLabel: '内容异常',
+      internalNote: '',
+      followUpAt: '明日 10:00',
+      activityMessage: '草稿未发送',
+    },
+  )
+})
+
 test('message center can move unread messages into the open queue', () => {
   const updated = updateMessageCenterQueueItem(messages, 'brand-audit', {
     action: 'mark-read',
@@ -438,4 +454,28 @@ test('message center action result keeps the composer aligned with the visible q
   assert.equal(result.internalNote, '')
   assert.equal(result.followUpAt, '今日 14:00')
   assert.equal(result.activityMessage, '消息已转入处理中')
+})
+
+test('message center action result carries schedule defaults into fallback composer state', () => {
+  const nextUnread: MessageCenterItem = {
+    ...messages[1],
+    id: 'new-course-note',
+    status: 'unread',
+    followUpAt: '',
+  }
+
+  const result = applyMessageCenterQueueAction(
+    [messages[0], nextUnread],
+    'brand-audit',
+    { status: 'unread' },
+    {
+      action: 'mark-read',
+      actor: '林晨',
+      at: '刚刚',
+    },
+    { followUpOptions: [{ label: '明日 10:00', value: '明日 10:00' }] },
+  )
+
+  assert.equal(result.view.selectedMessage?.id, 'new-course-note')
+  assert.equal(result.followUpAt, '明日 10:00')
 })

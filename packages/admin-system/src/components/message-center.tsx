@@ -91,17 +91,29 @@ const priorityTone: Record<MessagePriority, string> = {
   low: 'text-muted-foreground',
 }
 
+const defaultFollowUpOptions: MessageCenterFollowUpOption[] = [
+  { label: '今日 18:00', value: '今日 18:00' },
+  { label: '明日 10:00', value: '明日 10:00' },
+  { label: '下个工作日', value: '下个工作日' },
+]
+
 export function MessageCenter({
-  followUpOptions = [
-    { label: '今日 18:00', value: '今日 18:00' },
-    { label: '明日 10:00', value: '明日 10:00' },
-    { label: '下个工作日', value: '下个工作日' },
-  ],
+  followUpOptions = defaultFollowUpOptions,
   metrics,
   messages,
   replyTemplates,
   scopeLabel,
 }: MessageCenterProps) {
+  const initialComposerState = getMessageCenterComposerState(
+    messages[0],
+    getMessageCenterLabels(messages),
+    {
+      followUpOptions: getMessageCenterScheduleOptions(
+        messages,
+        followUpOptions,
+      ),
+    },
+  )
   const [queueMessages, setQueueMessages] = useState(messages)
   const [status, setStatus] = useState<MessageStatus | 'all'>('all')
   const [priority, setPriority] = useState<MessagePriority | 'all'>('all')
@@ -113,16 +125,22 @@ export function MessageCenter({
   const [selectedId, setSelectedId] = useState<string | undefined>(
     messages[0]?.id,
   )
-  const [draft, setDraft] = useState(messages[0]?.suggestedReply ?? '')
+  const [draft, setDraft] = useState(initialComposerState.draft)
   const [handoffAssignee, setHandoffAssignee] = useState(
-    messages[0]?.assignee ?? '',
+    initialComposerState.handoffAssignee,
   )
-  const [triageLabel, setTriageLabel] = useState(messages[0]?.labels[0] ?? '')
-  const [internalNote, setInternalNote] = useState('')
+  const [triageLabel, setTriageLabel] = useState(
+    initialComposerState.triageLabel,
+  )
+  const [internalNote, setInternalNote] = useState(
+    initialComposerState.internalNote,
+  )
   const [followUpAt, setFollowUpAt] = useState(
-    messages[0]?.followUpAt || followUpOptions[0]?.value || '',
+    initialComposerState.followUpAt,
   )
-  const [activityMessage, setActivityMessage] = useState('草稿未发送')
+  const [activityMessage, setActivityMessage] = useState(
+    initialComposerState.activityMessage,
+  )
   const filters = useMemo<MessageCenterFilters>(
     () => ({
       status,
@@ -161,14 +179,16 @@ export function MessageCenter({
   )
 
   const selectMessage = (message: MessageCenterItem | undefined) => {
-    const composerState = getMessageCenterComposerState(message, labelOptions)
+    const composerState = getMessageCenterComposerState(message, labelOptions, {
+      followUpOptions: scheduleOptions,
+    })
 
     setSelectedId(message?.id)
     setDraft(composerState.draft)
     setHandoffAssignee(composerState.handoffAssignee)
     setTriageLabel(composerState.triageLabel)
     setInternalNote(composerState.internalNote)
-    setFollowUpAt(composerState.followUpAt || scheduleOptions[0]?.value || '')
+    setFollowUpAt(composerState.followUpAt)
     setActivityMessage(composerState.activityMessage)
   }
 
@@ -195,6 +215,7 @@ export function MessageCenter({
         followUpAt,
         body: draft,
       },
+      { followUpOptions: scheduleOptions },
     )
 
     setQueueMessages(result.messages)
@@ -203,7 +224,7 @@ export function MessageCenter({
     setHandoffAssignee(result.handoffAssignee)
     setTriageLabel(result.triageLabel)
     setInternalNote(result.internalNote)
-    setFollowUpAt(result.followUpAt || scheduleOptions[0]?.value || '')
+    setFollowUpAt(result.followUpAt)
     setActivityMessage(result.activityMessage)
   }
 
