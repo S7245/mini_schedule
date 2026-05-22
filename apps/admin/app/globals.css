@@ -1,40 +1,72 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Scan shared admin-system package for Tailwind classes */
 @source "../../../packages/admin-system/src/**/*.{ts,tsx}";
 
 @theme {
   /* Mini Schedule backoffice theme, adapted from web/DESIGN.md */
-  --background: #faf9f5;
-  --foreground: #141413;
-  --card: #fffdf8;
-  --card-foreground: #141413;
-  --popover: #fffdf8;
-  --popover-foreground: #141413;
-  --primary: #cc785c;
+  --background: #ffffff;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #111111;
   --primary-foreground: #ffffff;
-  --secondary: #efe9de;
-  --secondary-foreground: #252523;
-  --muted: #f5f0e8;
-  --muted-foreground: #6c6a64;
-  --accent: #efe9de;
-  --accent-foreground: #252523;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #111111;
+  --muted: #f7f7f7;
+  --muted-foreground: #737373;
+  --accent: #f3f4f6;
+  --accent-foreground: #111111;
   --destructive: #c64545;
   --destructive-foreground: #ffffff;
-  --border: #e6dfd8;
-  --input: #e6dfd8;
-  --ring: #cc785c;
-  --sidebar: #f5f0e8;
-  --sidebar-foreground: #252523;
-  --sidebar-accent: #e8e0d2;
-  --sidebar-accent-foreground: #141413;
-  --sidebar-border: #e6dfd8;
-  --chart-1: #cc785c;
-  --chart-2: #5db8a6;
-  --chart-3: #e8a55a;
-  --chart-4: #5db872;
-  --chart-5: #8e8b82;
-  --radius: 0.5rem;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #111111;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #262626;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #e5e7eb;
+  --chart-1: #111111;
+  --chart-2: #737373;
+  --chart-3: #a3a3a3;
+  --chart-4: #525252;
+  --chart-5: #d4d4d4;
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --background-dark: #111111;
+  --foreground-dark: #fafafa;
+  --card-dark: #171717;
+  --card-foreground-dark: #fafafa;
+  --popover-dark: #171717;
+  --popover-foreground-dark: #fafafa;
+  --primary-dark: #fafafa;
+  --primary-foreground-dark: #111111;
+  --secondary-dark: #262626;
+  --secondary-foreground-dark: #fafafa;
+  --muted-dark: #262626;
+  --muted-foreground-dark: #a3a3a3;
+  --accent-dark: #262626;
+  --accent-foreground-dark: #fafafa;
+  --destructive-dark: #d66767;
+  --destructive-foreground-dark: #ffffff;
+  --border-dark: #262626;
+  --input-dark: #262626;
+  --ring-dark: #fafafa;
+  --sidebar-dark: #171717;
+  --sidebar-foreground-dark: #fafafa;
+  --sidebar-accent-dark: #262626;
+  --sidebar-accent-foreground-dark: #fafafa;
+  --sidebar-border-dark: #262626;
 
   /* Tailwind V4 color utilities mapping */
   --color-background: var(--background);
@@ -66,6 +98,33 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+}
+
+.dark {
+  --background: var(--background-dark);
+  --foreground: var(--foreground-dark);
+  --card: var(--card-dark);
+  --card-foreground: var(--card-foreground-dark);
+  --popover: var(--popover-dark);
+  --popover-foreground: var(--popover-foreground-dark);
+  --primary: var(--primary-dark);
+  --primary-foreground: var(--primary-foreground-dark);
+  --secondary: var(--secondary-dark);
+  --secondary-foreground: var(--secondary-foreground-dark);
+  --muted: var(--muted-dark);
+  --muted-foreground: var(--muted-foreground-dark);
+  --accent: var(--accent-dark);
+  --accent-foreground: var(--accent-foreground-dark);
+  --destructive: var(--destructive-dark);
+  --destructive-foreground: var(--destructive-foreground-dark);
+  --border: var(--border-dark);
+  --input: var(--input-dark);
+  --ring: var(--ring-dark);
+  --sidebar: var(--sidebar-dark);
+  --sidebar-foreground: var(--sidebar-foreground-dark);
+  --sidebar-accent: var(--sidebar-accent-dark);
+  --sidebar-accent-foreground: var(--sidebar-accent-foreground-dark);
+  --sidebar-border: var(--sidebar-border-dark);
 }
 
 @layer base {

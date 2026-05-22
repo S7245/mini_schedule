@@ -8,10 +8,12 @@ import {
   getMessageCenterAssignees,
   getMessageCenterFollowUpOptions,
   getMessageCenterLabels,
+  getMessageCenterPreview,
   getMessageCenterQueueView,
   getMessageCenterOwners,
   getMessageCenterScheduleOptions,
   getMessageCenterStatusCounts,
+  getMessageCenterSummary,
   updateMessageCenterQueueItem,
   type MessageCenterItem,
 } from '../src/models/message-center'
@@ -119,6 +121,24 @@ test('message center counts messages by queue status', () => {
     open: 1,
     resolved: 1,
   })
+})
+
+test('message center exposes queue summary for badges and overview cards', () => {
+  assert.deepEqual(getMessageCenterSummary(messages), {
+    total: 3,
+    unread: 1,
+    active: 2,
+    resolved: 1,
+    highPriority: 1,
+    scheduled: 1,
+  })
+})
+
+test('message center preview prioritizes unread and open work', () => {
+  assert.deepEqual(
+    getMessageCenterPreview(messages, 2).map((message) => message.id),
+    ['brand-audit', 'course-cover'],
+  )
 })
 
 test('message center exposes stable owner filters', () => {

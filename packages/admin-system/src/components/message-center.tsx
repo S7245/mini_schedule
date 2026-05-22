@@ -234,7 +234,7 @@ export function MessageCenter({
         {metrics.map((metric) => (
           <section
             key={metric.label}
-            className="rounded-lg border border-border bg-card p-4 shadow-sm"
+            className="rounded-xl border border-border bg-card p-4 shadow-sm"
           >
             <p className="text-xs font-medium text-muted-foreground">
               {metric.label}
@@ -249,7 +249,7 @@ export function MessageCenter({
         ))}
       </div>
 
-      <div className="grid min-h-[34rem] overflow-hidden rounded-lg border border-border bg-card shadow-sm lg:grid-cols-[minmax(18rem,24rem)_1fr]">
+      <div className="grid min-h-[34rem] overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:grid-cols-[minmax(18rem,24rem)_1fr]">
         <section className="border-b border-border lg:border-b-0 lg:border-r">
           <div className="border-b border-border p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -489,7 +489,7 @@ export function MessageCenter({
 
             <div className="grid gap-4 px-5 md:grid-cols-[1fr_minmax(16rem,20rem)]">
               <div className="space-y-4">
-                <div className="rounded-lg border border-border bg-background p-4">
+                <div className="rounded-xl border border-border bg-background p-4">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
                     <div>
@@ -503,7 +503,7 @@ export function MessageCenter({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-border bg-background p-4">
+                <div className="rounded-xl border border-border bg-background p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <ExternalLink className="size-4 text-primary" />
                     关联记录
@@ -515,7 +515,7 @@ export function MessageCenter({
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-border bg-background p-4">
+                <div className="rounded-xl border border-border bg-background p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <StickyNote className="size-4 text-primary" />
                     内部备注
@@ -533,7 +533,7 @@ export function MessageCenter({
                 </div>
               </div>
 
-              <div className="rounded-lg border border-border bg-background p-4">
+              <div className="rounded-xl border border-border bg-background p-4">
                 <p className="text-sm font-semibold text-foreground">
                   处理记录
                 </p>
@@ -752,7 +752,7 @@ function MessageFact({
   value: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="rounded-xl border border-border bg-background p-4">
       <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
         {icon}
         {label}

@@ -6,6 +6,7 @@ import type { BackofficeNavGroup, BackofficeNavItem } from '../models/nav'
 import { getBackofficeBreadcrumbs } from '../models/nav'
 import { AppShell } from './app-shell'
 import { PageContainer } from './page-container'
+import { SHELL_PREFERENCE_DEFAULTS, type SidebarStyle } from './preferences'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 
@@ -19,6 +20,7 @@ interface ProtectedAppLayoutProps {
   topbarTitle: string
   topbarActions?: ReactNode
   sidebarFooter?: ReactNode
+  sidebarStyle?: SidebarStyle
   searchPlaceholder?: string
   userLabel?: string
   userDescription?: string
@@ -48,6 +50,7 @@ export function ProtectedAppLayout({
   topbarTitle,
   topbarActions,
   sidebarFooter,
+  sidebarStyle,
   searchPlaceholder,
   userLabel,
   userDescription,
@@ -58,10 +61,22 @@ export function ProtectedAppLayout({
 }: ProtectedAppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const preferences = useMemo(
+    () => ({
+      ...SHELL_PREFERENCE_DEFAULTS,
+      sidebarStyle: sidebarStyle ?? SHELL_PREFERENCE_DEFAULTS.sidebarStyle,
+    }),
+    [sidebarStyle],
+  )
 
   useEffect(() => {
     setSidebarOpen(readSidebarCookie())
   }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove('dark')
+  }, [preferences])
 
   const setOpen = (open: boolean) => {
     setSidebarOpen(open)
@@ -73,19 +88,32 @@ export function ProtectedAppLayout({
     [navItems, pathname, topbarTitle],
   )
 
+  const desktopSidebarCollapsed = !sidebarOpen
+  const desktopSidebarHidden =
+    preferences.sidebarCollapseMode === 'offcanvas' && desktopSidebarCollapsed
+
   return (
     <AppShell
-      sidebarCollapsed={!sidebarOpen}
+      preferences={preferences}
+      sidebarCollapsed={desktopSidebarCollapsed}
+      desktopSidebarHidden={desktopSidebarHidden}
       sidebar={
         <Sidebar
           appName={appName}
           items={navItems}
           groups={navGroups}
           pathname={pathname}
-          collapsed={!sidebarOpen}
+          collapsed={desktopSidebarCollapsed}
+          hidden={desktopSidebarHidden}
+          sidebarStyle={preferences.sidebarStyle}
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
           footer={sidebarFooter}
+          userLabel={userLabel}
+          userDescription={userDescription}
+          logoutLabel={logoutLabel}
+          logoutPending={logoutPending}
+          onLogout={onLogout}
         />
       }
       topbar={
@@ -93,7 +121,8 @@ export function ProtectedAppLayout({
           title={topbarTitle}
           actions={topbarActions}
           breadcrumbs={breadcrumbs}
-          sidebarCollapsed={!sidebarOpen}
+          sidebarCollapsed={desktopSidebarCollapsed}
+          preferences={preferences}
           onToggleSidebar={() => setOpen(!sidebarOpen)}
           onOpenMobileSidebar={() => setMobileOpen(true)}
           searchPlaceholder={searchPlaceholder}
@@ -105,7 +134,7 @@ export function ProtectedAppLayout({
         />
       }
     >
-      <PageContainer>{children}</PageContainer>
+      <PageContainer pageLayout={preferences.pageLayout}>{children}</PageContainer>
     </AppShell>
   )
 }

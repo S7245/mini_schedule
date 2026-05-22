@@ -66,6 +66,15 @@ export interface MessageCenterQueueView {
   selectedMessage?: MessageCenterItem
 }
 
+export interface MessageCenterSummary {
+  total: number
+  unread: number
+  active: number
+  resolved: number
+  highPriority: number
+  scheduled: number
+}
+
 export type MessageCenterStatusCounts = Record<MessageStatus | 'all', number>
 export type MessageCenterQueueAction =
   | 'mark-read'
@@ -128,6 +137,61 @@ export function getMessageCenterStatusCounts(
       resolved: 0,
     },
   )
+}
+
+export function getMessageCenterSummary(
+  messages: MessageCenterItem[],
+): MessageCenterSummary {
+  return messages.reduce<MessageCenterSummary>(
+    (summary, message) => ({
+      total: summary.total + 1,
+      unread: summary.unread + (message.status === 'unread' ? 1 : 0),
+      active:
+        summary.active +
+        (message.status === 'unread' || message.status === 'open' ? 1 : 0),
+      resolved: summary.resolved + (message.status === 'resolved' ? 1 : 0),
+      highPriority:
+        summary.highPriority + (message.priority === 'high' ? 1 : 0),
+      scheduled: summary.scheduled + (message.followUpAt ? 1 : 0),
+    }),
+    {
+      total: 0,
+      unread: 0,
+      active: 0,
+      resolved: 0,
+      highPriority: 0,
+      scheduled: 0,
+    },
+  )
+}
+
+export function getMessageCenterPreview(
+  messages: MessageCenterItem[],
+  limit = 3,
+): MessageCenterItem[] {
+  const statusOrder: Record<MessageStatus, number> = {
+    unread: 0,
+    open: 1,
+    resolved: 2,
+  }
+  const priorityOrder: Record<MessagePriority, number> = {
+    high: 0,
+    normal: 1,
+    low: 2,
+  }
+
+  return [...messages]
+    .sort((left, right) => {
+      const statusDelta = statusOrder[left.status] - statusOrder[right.status]
+      if (statusDelta !== 0) return statusDelta
+
+      const priorityDelta =
+        priorityOrder[left.priority] - priorityOrder[right.priority]
+      if (priorityDelta !== 0) return priorityDelta
+
+      return left.receivedAt.localeCompare(right.receivedAt, 'zh-CN')
+    })
+    .slice(0, limit)
 }
 
 export function getMessageCenterOwners(

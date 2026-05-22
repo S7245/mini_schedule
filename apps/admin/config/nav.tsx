@@ -1,5 +1,6 @@
 import { Building2, Inbox, LayoutDashboard, Shield } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
+import { adminMessageSummary } from '@/lib/message-center-data'
 
 export const adminNavItems: BackofficeNavItem[] = [
   {
@@ -21,6 +22,6 @@ export const adminNavItems: BackofficeNavItem[] = [
     href: '/messages',
     label: '消息中心',
     icon: <Inbox className="h-4 w-4" />,
-    badge: '4',
+    badge: String(adminMessageSummary.unread),
   },
 ]

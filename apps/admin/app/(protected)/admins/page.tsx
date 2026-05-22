@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { Download, ShieldCheck } from 'lucide-react'
 import { useAdmins, useCreateAdmin } from '@mini-schedule/api/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +42,21 @@ const roleTone = {
   support: 'warning' as const,
 }
 
+function SummaryBadge({
+  label,
+  value,
+}: {
+  label: string
+  value: number
+}) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-background/85 px-3 py-2 shadow-sm">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-base font-semibold text-foreground">{value}</p>
+    </div>
+  )
+}
+
 export default function AdminsPage() {
   const [page, setPage] = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -72,6 +88,10 @@ export default function AdminsPage() {
     totalItems: data?.total,
     pageSize: data?.page_size,
   })
+  const admins = data?.items ?? []
+  const superAdminCount = admins.filter((admin) => admin.role === 'super_admin').length
+  const operatorCount = admins.filter((admin) => admin.role === 'operator').length
+  const supportCount = admins.filter((admin) => admin.role === 'support').length
 
   return (
     <ResourceListPage
@@ -134,7 +154,27 @@ export default function AdminsPage() {
       }
       filters={
         <FilterBar>
-          <p className="text-sm text-slate-500">当前管理员账号列表，支持角色区分和新增账号。</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">当前管理员账号列表，支持角色区分和新增账号。</p>
+              <p className="text-xs text-muted-foreground">建议把高权限账号数量保持精简，运营与客服权限单独分层。</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <SummaryBadge label="超级管理员" value={superAdminCount} />
+              <SummaryBadge label="运营" value={operatorCount} />
+              <SummaryBadge label="客服" value={supportCount} />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-2 rounded-2xl">
+              <ShieldCheck className="size-4" />
+              权限检查
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2 rounded-2xl">
+              <Download className="size-4" />
+              导出账号
+            </Button>
+          </div>
         </FilterBar>
       }
       content={
@@ -173,12 +213,24 @@ export default function AdminsPage() {
       }
       footer={
         <div className="flex items-center justify-between px-6 py-4">
-          <p className="text-sm text-slate-500">{getBackofficePaginationLabel(pagination)}</p>
+          <p className="text-sm text-muted-foreground">{getBackofficePaginationLabel(pagination)}</p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={!pagination.canGoPrevious} onClick={() => setPage((current) => current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-2xl"
+              disabled={!pagination.canGoPrevious}
+              onClick={() => setPage((current) => current - 1)}
+            >
               上一页
             </Button>
-            <Button variant="outline" size="sm" disabled={!pagination.canGoNext} onClick={() => setPage((current) => current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-2xl"
+              disabled={!pagination.canGoNext}
+              onClick={() => setPage((current) => current + 1)}
+            >
               下一页
             </Button>
           </div>

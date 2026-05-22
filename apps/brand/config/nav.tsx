@@ -6,6 +6,7 @@ import {
   UsersRound,
 } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
+import { brandMessageSummary } from '@/lib/message-center-data'
 
 export const brandNavItems: BackofficeNavItem[] = [
   {
@@ -32,6 +33,6 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/messages',
     label: '消息中心',
     icon: <Inbox className="h-4 w-4" />,
-    badge: '3',
+    badge: String(brandMessageSummary.unread),
   },
 ]

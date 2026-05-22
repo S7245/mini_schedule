@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Activity, ArrowUpRight, Building2, CircleAlert, Server, Shield } from 'lucide-react'
+import { Activity, ArrowUpRight, Building2, CircleAlert, Inbox, Server, Shield } from 'lucide-react'
 import { useAdmins, useBrands } from '@mini-schedule/api/admin'
 import { Button } from '@/components/ui/button'
 import { DashboardPageTemplate } from '@mini-schedule/admin-system/templates/dashboard-page-template'
@@ -9,6 +9,8 @@ import { PageHeader } from '@mini-schedule/admin-system/components/page-header'
 import { StatCard } from '@mini-schedule/admin-system/components/stat-card'
 import { SectionCard } from '@mini-schedule/admin-system/components/section-card'
 import type { Brand, PageResponse } from '@mini-schedule/types'
+import { adminMessagePreview, adminMessageSummary } from '@/lib/message-center-data'
+import type { MessageCenterItem } from '@mini-schedule/admin-system/models/message-center'
 
 function formatCount(value?: number) {
   if (typeof value !== 'number') return '--'
@@ -86,6 +88,43 @@ function RecentBrands({ brands }: { brands: Brand[] }) {
   )
 }
 
+function MessageQueuePreview() {
+  return (
+    <div className="space-y-4">
+      {adminMessagePreview.map((message: MessageCenterItem) => (
+        <div key={message.id} className="space-y-2 rounded-md border border-border bg-background px-3 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {message.title}
+              </p>
+              <p className="mt-1 truncate text-xs text-muted-foreground">
+                {message.sender} · {message.sourceLabel}
+              </p>
+            </div>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+              {message.status === 'resolved' ? '已解决' : '待处理'}
+            </span>
+          </div>
+          <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">
+            {message.body}
+          </p>
+        </div>
+      ))}
+      <Link
+        href="/messages"
+        className="flex items-center justify-between rounded-md border border-dashed border-border px-3 py-2 text-sm text-foreground transition hover:bg-accent"
+      >
+        <span className="flex items-center gap-2">
+          <Inbox className="size-4 text-primary" />
+          打开消息中心
+        </span>
+        <ArrowUpRight className="size-4 text-muted-foreground" />
+      </Link>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const brandsQuery = useBrands(1, 20) as {
     data: PageResponse<Brand> | undefined
@@ -132,11 +171,11 @@ export default function DashboardPage() {
             tone={hasError ? 'danger' : 'success'}
           />
           <StatCard
-            label="待审核品牌"
-            value="待接入"
-            hint="需要 dashboard summary API"
-            trend="P1"
-            tone="warning"
+            label="未读消息"
+            value={String(adminMessageSummary.unread)}
+            hint="待平台运营优先处理的消息"
+            trend={`${adminMessageSummary.highPriority} 条高优`}
+            tone={adminMessageSummary.highPriority > 0 ? 'warning' : 'success'}
           />
           <StatCard
             label="运营健康"
@@ -155,6 +194,13 @@ export default function DashboardPage() {
 
           <SectionCard title="品牌状态抽样" description="展示当前页品牌状态分布，避免把分页数据伪装成全局统计。">
             <StatusBars brands={brands} />
+          </SectionCard>
+
+          <SectionCard
+            title="待处理消息"
+            description="把入驻审核、账号支持和内容异常放回概览首页，方便平台运营直接切入消息中心。"
+          >
+            <MessageQueuePreview />
           </SectionCard>
         </>
       }

@@ -19,7 +19,7 @@ export function StatCard({
   }[tone]
 
   return (
-    <div data-slot="card" className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <div data-slot="card" className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         {trend ? (

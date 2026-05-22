@@ -1,61 +1,69 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 /* Scan shared admin-system package for Tailwind classes */
 @source "../../../packages/admin-system/src/**/*.{ts,tsx}";
 
 @theme {
-  /* Brand-specific green primary theme */
+  /* Shared backoffice shell theme */
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 0 0% 7%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 0 0% 7%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 142 76% 36%;
-  --primary-foreground: 355.7 100% 97.3%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --popover-foreground: 0 0% 7%;
+  --primary: 0 0% 7%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 7%;
+  --muted: 0 0% 97%;
+  --muted-foreground: 0 0% 45%;
+  --accent: 210 20% 96%;
+  --accent-foreground: 0 0% 7%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 142 76% 36%;
-  --sidebar: 150 35% 96%;
-  --sidebar-foreground: 156 26% 18%;
-  --sidebar-accent: 142 38% 90%;
-  --sidebar-accent-foreground: 156 34% 16%;
-  --sidebar-border: 142 22% 86%;
-  --radius: 0.5rem;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 0 0% 7%;
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 0 0% 15%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 0 0% 7%;
+  --sidebar-border: 220 13% 91%;
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 
   /* Dark mode */
-  --background-dark: 222.2 84% 4.9%;
-  --foreground-dark: 210 40% 98%;
-  --card-dark: 222.2 84% 4.9%;
-  --card-foreground-dark: 210 40% 98%;
-  --popover-dark: 222.2 84% 4.9%;
-  --popover-foreground-dark: 210 40% 98%;
-  --primary-dark: 142 76% 36%;
-  --primary-foreground-dark: 355.7 100% 97.3%;
-  --secondary-dark: 217.2 32.6% 17.5%;
-  --secondary-foreground-dark: 210 40% 98%;
-  --muted-dark: 217.2 32.6% 17.5%;
-  --muted-foreground-dark: 215 20.2% 65.1%;
-  --accent-dark: 217.2 32.6% 17.5%;
-  --accent-foreground-dark: 210 40% 98%;
+  --background-dark: 0 0% 7%;
+  --foreground-dark: 0 0% 98%;
+  --card-dark: 0 0% 9%;
+  --card-foreground-dark: 0 0% 98%;
+  --popover-dark: 0 0% 9%;
+  --popover-foreground-dark: 0 0% 98%;
+  --primary-dark: 0 0% 98%;
+  --primary-foreground-dark: 0 0% 7%;
+  --secondary-dark: 0 0% 15%;
+  --secondary-foreground-dark: 0 0% 98%;
+  --muted-dark: 0 0% 15%;
+  --muted-foreground-dark: 0 0% 64%;
+  --accent-dark: 0 0% 15%;
+  --accent-foreground-dark: 0 0% 98%;
   --destructive-dark: 0 62.8% 30.6%;
   --destructive-foreground-dark: 210 40% 98%;
-  --border-dark: 217.2 32.6% 17.5%;
-  --input-dark: 217.2 32.6% 17.5%;
-  --ring-dark: 142 76% 36%;
-  --sidebar-dark: 156 28% 12%;
-  --sidebar-foreground-dark: 150 30% 94%;
-  --sidebar-accent-dark: 155 28% 20%;
-  --sidebar-accent-foreground-dark: 150 30% 94%;
-  --sidebar-border-dark: 155 22% 24%;
+  --border-dark: 0 0% 15%;
+  --input-dark: 0 0% 15%;
+  --ring-dark: 0 0% 98%;
+  --sidebar-dark: 0 0% 9%;
+  --sidebar-foreground-dark: 0 0% 98%;
+  --sidebar-accent-dark: 0 0% 15%;
+  --sidebar-accent-foreground-dark: 0 0% 98%;
+  --sidebar-border-dark: 0 0% 15%;
 
   /* Tailwind V4 color utilities mapping */
   --color-background: hsl(var(--background));

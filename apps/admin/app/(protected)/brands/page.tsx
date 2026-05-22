@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
+import { ArrowUpRight, Download, Sparkles } from 'lucide-react'
 import { useBrands, useCreateBrand, useUpdateBrandStatus } from '@mini-schedule/api/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,6 +35,30 @@ const statusUi: Record<BrandStatus, { label: string; tone: 'success' | 'danger' 
   active: { label: '已启用', tone: 'success' },
   suspended: { label: '已停用', tone: 'danger' },
   pending: { label: '待审核', tone: 'warning' },
+}
+
+function SummaryChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: number
+  tone: 'success' | 'warning' | 'danger'
+}) {
+  const toneClassName =
+    tone === 'success'
+      ? 'bg-emerald-50 text-emerald-700'
+      : tone === 'warning'
+        ? 'bg-amber-50 text-amber-700'
+        : 'bg-rose-50 text-rose-700'
+
+  return (
+    <div className="rounded-2xl border border-border/70 bg-background/85 px-3 py-2 shadow-sm">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <p className={toneClassName + ' mt-2 inline-flex rounded-full px-2.5 py-1 text-sm font-semibold'}>{value}</p>
+    </div>
+  )
 }
 
 export default function BrandsPage() {
@@ -72,6 +97,10 @@ export default function BrandsPage() {
     totalItems: data?.total,
     pageSize: data?.page_size,
   })
+  const brands = data?.items ?? []
+  const activeCount = brands.filter((brand) => brand.status === 'active').length
+  const pendingCount = brands.filter((brand) => brand.status === 'pending').length
+  const suspendedCount = brands.filter((brand) => brand.status === 'suspended').length
 
   return (
     <ResourceListPage
@@ -128,9 +157,24 @@ export default function BrandsPage() {
       }
       filters={
         <FilterBar>
-          <p className="text-sm text-slate-500">共 {data?.total ?? 0} 个品牌，支持创建、查看与状态变更。</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <p className="text-sm font-medium text-foreground">共 {data?.total ?? 0} 个品牌，支持创建、查看与状态变更。</p>
+              <p className="text-xs text-muted-foreground">列表优先服务入驻审核、启停处理和品牌详情查看。</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <SummaryChip label="已启用" value={activeCount} tone="success" />
+              <SummaryChip label="待审核" value={pendingCount} tone="warning" />
+              <SummaryChip label="已停用" value={suspendedCount} tone="danger" />
+            </div>
+          </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="gap-2 rounded-2xl">
+              <Sparkles className="size-4" />
+              智能筛查
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2 rounded-2xl">
+              <Download className="size-4" />
               导出列表
             </Button>
           </div>
@@ -166,13 +210,17 @@ export default function BrandsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Link href={`/brands/${brand.id}`} className="text-sm text-primary hover:underline">
+                        <Link
+                          href={`/brands/${brand.id}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary transition hover:bg-primary/15"
+                        >
                           查看
+                          <ArrowUpRight className="size-3.5" />
                         </Link>
                         {brand.status === 'pending' ? (
                           <button
                             type="button"
-                            className="text-sm text-green-600 hover:underline"
+                            className="rounded-full bg-emerald-50 px-2.5 py-1 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
                             onClick={() =>
                               statusMutation.mutate({
                                 id: brand.id,
@@ -186,7 +234,7 @@ export default function BrandsPage() {
                         {brand.status === 'active' ? (
                           <button
                             type="button"
-                            className="text-sm text-amber-600 hover:underline"
+                            className="rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700 transition hover:bg-amber-100"
                             onClick={() =>
                               statusMutation.mutate({
                                 id: brand.id,
@@ -208,12 +256,24 @@ export default function BrandsPage() {
       }
       footer={
         <div className="flex items-center justify-between px-6 py-4">
-          <p className="text-sm text-slate-500">{getBackofficePaginationLabel(pagination)}</p>
+          <p className="text-sm text-muted-foreground">{getBackofficePaginationLabel(pagination)}</p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={!pagination.canGoPrevious} onClick={() => setPage((current) => current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-2xl"
+              disabled={!pagination.canGoPrevious}
+              onClick={() => setPage((current) => current - 1)}
+            >
               上一页
             </Button>
-            <Button variant="outline" size="sm" disabled={!pagination.canGoNext} onClick={() => setPage((current) => current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-2xl"
+              disabled={!pagination.canGoNext}
+              onClick={() => setPage((current) => current + 1)}
+            >
               下一页
             </Button>
           </div>
