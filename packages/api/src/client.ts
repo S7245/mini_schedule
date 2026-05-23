@@ -36,13 +36,21 @@ function shouldUseCookieAuth(path: string): boolean {
   return path.startsWith('/api/v1/admin/')
 }
 
+function getRequestUrl(path: string): string {
+  if (typeof window !== 'undefined' && shouldUseCookieAuth(path)) {
+    return path
+  }
+
+  return `${getBaseUrl()}${path}`
+}
+
 export async function api<T>(
   path: string,
   options: RequestInitExtended = {}
 ): Promise<T> {
   const { silent = false, ...fetchOptions } = options
 
-  const url = `${getBaseUrl()}${path}`
+  const url = getRequestUrl(path)
   const token = shouldUseCookieAuth(path) ? null : getToken()
 
   const headers: Record<string, string> = {
