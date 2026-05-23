@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Bell, ChevronRight, CreditCard, EllipsisVertical, LogOut, UserRound, X } from 'lucide-react'
 import {
@@ -36,30 +37,83 @@ interface SidebarProps {
   onLogout?: () => void
 }
 
+interface CollapsedTooltipState {
+  label: string
+  left: number
+  top: number
+  status: 'open' | 'closing'
+}
+
+function CollapsedSidebarTooltip({
+  tooltip,
+  onMouseEnter,
+  onMouseLeave,
+}: {
+  tooltip: CollapsedTooltipState | null
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+}) {
+  if (!tooltip) return null
+
+  return (
+    <div
+      className={cn(
+        'fixed z-[80] flex -translate-y-1/2 items-center transition-[opacity,transform] duration-150 ease-out',
+        tooltip.status === 'open' ? 'translate-x-0 scale-100 opacity-100' : '-translate-x-1 scale-95 opacity-0',
+      )}
+      style={{ left: tooltip.left, top: tooltip.top }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <span aria-hidden="true" className="block h-9 w-2" />
+      <div className="relative flex items-center">
+        <span
+          aria-hidden="true"
+          className="absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] bg-foreground shadow-lg"
+        />
+        <span className="relative whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg">
+          {tooltip.label}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function NavLink({
   item,
   pathname,
   collapsed,
   nested = false,
   onNavigate,
+  onTooltipShow,
+  onTooltipHide,
 }: {
   item: BackofficeNavItem
   pathname: string
   collapsed: boolean
   nested?: boolean
   onNavigate?: () => void
+  onTooltipShow?: (label: string, element: HTMLElement) => void
+  onTooltipHide?: () => void
 }) {
   const active = isBackofficeNavItemActive(pathname, item)
   const hasChildren = !!item.items?.length
 
   return (
-    <div>
+    <div className="relative">
       <Link
         href={item.href}
-        title={collapsed ? item.label : undefined}
+        onFocus={(event) => {
+          if (collapsed && !nested) onTooltipShow?.(item.label, event.currentTarget)
+        }}
+        onBlur={onTooltipHide}
+        onMouseEnter={(event) => {
+          if (collapsed && !nested) onTooltipShow?.(item.label, event.currentTarget)
+        }}
+        onMouseLeave={onTooltipHide}
         onClick={onNavigate}
         className={cn(
-          'group flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150',
+          'group relative flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150',
           active
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
             : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
@@ -95,6 +149,8 @@ function NavLink({
               collapsed={false}
               nested
               onNavigate={onNavigate}
+              onTooltipShow={onTooltipShow}
+              onTooltipHide={onTooltipHide}
             />
           ))}
         </div>
@@ -110,6 +166,8 @@ function SidebarUserCard({
   logoutLabel = '退出登录',
   logoutPending = false,
   onLogout,
+  onTooltipShow,
+  onTooltipHide,
 }: {
   collapsed: boolean
   userLabel?: string
@@ -117,6 +175,8 @@ function SidebarUserCard({
   logoutLabel?: string
   logoutPending?: boolean
   onLogout?: () => void
+  onTooltipShow?: (label: string, element: HTMLElement) => void
+  onTooltipHide?: () => void
 }) {
   const initials = getInitials(userLabel)
 
@@ -126,8 +186,16 @@ function SidebarUserCard({
         <button
           type="button"
           aria-label="打开用户菜单"
+          onFocus={(event) => {
+            if (collapsed) onTooltipShow?.(userLabel, event.currentTarget)
+          }}
+          onBlur={onTooltipHide}
+          onMouseEnter={(event) => {
+            if (collapsed) onTooltipShow?.(userLabel, event.currentTarget)
+          }}
+          onMouseLeave={onTooltipHide}
           className={cn(
-            'group flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring active:bg-sidebar-accent active:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
+            'group relative flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-ring active:bg-sidebar-accent active:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground',
             collapsed && 'size-8 justify-center p-2',
           )}
         >
@@ -217,6 +285,69 @@ function SidebarContent({
   onLogout?: () => void
   onNavigate?: () => void
 }) {
+  const [tooltip, setTooltip] = useState<CollapsedTooltipState | null>(null)
+  const hideTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const openTooltipFrame = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      clearHideTooltip()
+      if (openTooltipFrame.current) {
+        cancelAnimationFrame(openTooltipFrame.current)
+      }
+    }
+  }, [])
+
+  const clearHideTooltip = () => {
+    if (hideTooltipTimer.current) {
+      clearTimeout(hideTooltipTimer.current)
+      hideTooltipTimer.current = null
+    }
+  }
+
+  const showCollapsedTooltip = (label: string, element: HTMLElement) => {
+    if (!collapsed) return
+    clearHideTooltip()
+    if (openTooltipFrame.current) {
+      cancelAnimationFrame(openTooltipFrame.current)
+      openTooltipFrame.current = null
+    }
+
+    const rect = element.getBoundingClientRect()
+    const nextTooltip = {
+      label,
+      left: rect.right,
+      top: rect.top + rect.height / 2,
+      status: 'closing' as const,
+    }
+
+    setTooltip(nextTooltip)
+    openTooltipFrame.current = requestAnimationFrame(() => {
+      setTooltip((current) => {
+        if (!current) return current
+        if (current.label !== nextTooltip.label || current.left !== nextTooltip.left || current.top !== nextTooltip.top) {
+          return current
+        }
+
+        return { ...current, status: 'open' }
+      })
+      openTooltipFrame.current = null
+    })
+  }
+
+  const hideCollapsedTooltip = () => {
+    setTooltip((current) => {
+      if (!current) return null
+      return { ...current, status: 'closing' }
+    })
+
+    clearHideTooltip()
+    hideTooltipTimer.current = setTimeout(() => {
+      setTooltip(null)
+      hideTooltipTimer.current = null
+    }, 90)
+  }
+
   return (
     <div className="flex h-full flex-col">
       <div className={cn('flex h-14 items-center px-4', collapsed && 'justify-center px-2')}>
@@ -253,6 +384,8 @@ function SidebarContent({
                     pathname={pathname}
                     collapsed={collapsed}
                     onNavigate={onNavigate}
+                    onTooltipShow={showCollapsedTooltip}
+                    onTooltipHide={hideCollapsedTooltip}
                   />
                 ))}
               </div>
@@ -270,8 +403,15 @@ function SidebarContent({
           logoutLabel={logoutLabel}
           logoutPending={logoutPending}
           onLogout={onLogout}
+          onTooltipShow={showCollapsedTooltip}
+          onTooltipHide={hideCollapsedTooltip}
         />
       </div>
+      <CollapsedSidebarTooltip
+        tooltip={collapsed ? tooltip : null}
+        onMouseEnter={clearHideTooltip}
+        onMouseLeave={hideCollapsedTooltip}
+      />
     </div>
   )
 }
@@ -304,7 +444,7 @@ export function Sidebar({
           'fixed left-0 z-40 hidden bg-sidebar text-sidebar-foreground transition-[width,transform,opacity,left] duration-200 ease-linear md:block',
           floating
             ? 'bottom-3 top-3 ml-3 overflow-visible rounded-xl border border-sidebar-border shadow-[0_16px_48px_rgba(15,23,42,0.10)]'
-            : 'inset-y-0 border-r border-sidebar-border',
+            : 'inset-y-0 overflow-visible border-r border-sidebar-border',
           hidden
             ? 'pointer-events-none w-0 -translate-x-8 opacity-0'
             : collapsed

@@ -4,5 +4,8 @@ node_modules/
 .test-build/
 dist/
 out/
+.DS_Store
+*.tsbuildinfo
 *.local
-.env
+.env*
+.vercel
