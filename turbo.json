@@ -19,6 +19,17 @@
     },
     "clean": {
       "cache": false
+    },
+    "electron:compile": {
+      "dependsOn": [],
+      "inputs": ["electron/src/**/*.ts", "tsconfig.electron.json"],
+      "outputs": ["electron/dist/**"]
+    },
+    "electron:build": {
+      "dependsOn": ["build", "electron:compile"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "electron/**"],
+      "outputs": ["dist-electron/**"],
+      "cache": false
     }
   }
 }

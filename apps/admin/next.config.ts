@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Outputs a self-contained Node.js server at .next/standalone/ for Electron packaging
+  output: 'standalone',
   async rewrites() {
     return [
       {
