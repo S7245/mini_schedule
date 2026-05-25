@@ -13,9 +13,6 @@ const config = {
   appId: 'com.minischedule.admin',
   productName: 'Mini Schedule Admin',
 
-  // Entry point compiled from electron/src/main.ts
-  main: 'electron/dist/main.js',
-
   directories: {
     output: 'dist-electron',
     buildResources: 'electron/assets',

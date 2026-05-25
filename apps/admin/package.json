@@ -12,10 +12,10 @@
 
     "electron:compile": "tsc -p tsconfig.electron.json",
     "electron:dev": "concurrently -k -n \"next,electron\" -c \"cyan,yellow\" \"next dev -p 3001\" \"wait-on http://127.0.0.1:3001 && electron .\"",
-    "electron:build": "next build && tsc -p tsconfig.electron.json && electron-builder",
-    "electron:build:mac": "next build && tsc -p tsconfig.electron.json && electron-builder --mac",
-    "electron:build:win": "next build && tsc -p tsconfig.electron.json && electron-builder --win",
-    "electron:build:linux": "next build && tsc -p tsconfig.electron.json && electron-builder --linux"
+    "electron:build": "next build && tsc -p tsconfig.electron.json && electron-builder --config electron-builder.config.js",
+    "electron:build:mac": "next build && tsc -p tsconfig.electron.json && electron-builder --mac --config electron-builder.config.js",
+    "electron:build:win": "next build && tsc -p tsconfig.electron.json && electron-builder --win --config electron-builder.config.js",
+    "electron:build:linux": "next build && tsc -p tsconfig.electron.json && electron-builder --linux --config electron-builder.config.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
