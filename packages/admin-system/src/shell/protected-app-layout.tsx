@@ -19,6 +19,7 @@ interface ProtectedAppLayoutProps {
   pathname: string
   topbarTitle: string
   topbarActions?: ReactNode
+  sidebarHeaderContent?: ReactNode
   sidebarFooter?: ReactNode
   sidebarStyle?: SidebarStyle
   searchPlaceholder?: string
@@ -49,6 +50,7 @@ export function ProtectedAppLayout({
   pathname,
   topbarTitle,
   topbarActions,
+  sidebarHeaderContent,
   sidebarFooter,
   sidebarStyle,
   searchPlaceholder,
@@ -108,6 +110,7 @@ export function ProtectedAppLayout({
           sidebarStyle={preferences.sidebarStyle}
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
+          headerContent={sidebarHeaderContent}
           footer={sidebarFooter}
           userLabel={userLabel}
           userDescription={userDescription}

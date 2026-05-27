@@ -29,6 +29,7 @@ interface SidebarProps {
   sidebarStyle?: SidebarStyle
   mobileOpen?: boolean
   onMobileOpenChange?: (open: boolean) => void
+  headerContent?: ReactNode
   footer?: ReactNode
   userLabel?: string
   userDescription?: string
@@ -116,7 +117,7 @@ function NavLink({
           'group relative flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150',
           active
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
+            : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
           collapsed && !nested && 'justify-center px-2',
           nested && 'min-h-8 pl-10 text-[13px]'
         )}
@@ -124,7 +125,7 @@ function NavLink({
         {item.icon ? (
           <span
             className={cn(
-              'grid size-4 shrink-0 place-items-center text-sidebar-foreground/65 transition-colors',
+              'grid size-4 shrink-0 place-items-center text-sidebar-foreground/90 transition-colors',
               active && 'text-primary',
             )}
           >
@@ -263,6 +264,7 @@ function SidebarContent({
   groups,
   pathname,
   collapsed,
+  headerContent,
   footer,
   floating = false,
   userLabel,
@@ -276,6 +278,7 @@ function SidebarContent({
   groups: BackofficeNavGroup[]
   pathname: string
   collapsed: boolean
+  headerContent?: ReactNode
   footer?: ReactNode
   floating?: boolean
   userLabel?: string
@@ -288,6 +291,7 @@ function SidebarContent({
   const [tooltip, setTooltip] = useState<CollapsedTooltipState | null>(null)
   const hideTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const openTooltipFrame = useRef<number | null>(null)
+  const compactBrand = floating
 
   useEffect(() => {
     return () => {
@@ -350,22 +354,30 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div className={cn('flex h-14 items-center px-4', collapsed && 'justify-center px-2')}>
+      <div className={cn('flex h-14 items-center px-4', compactBrand && 'h-12 px-3', collapsed && 'justify-center px-2')}>
         <Link href="/dashboard" onClick={onNavigate} className="flex min-w-0 items-center gap-3">
           <span
             className={cn(
               'grid size-9 shrink-0 place-items-center bg-primary text-sm font-semibold text-primary-foreground',
-              floating ? 'rounded-lg shadow-sm' : 'rounded-full',
+              compactBrand ? 'rounded-lg shadow-sm' : 'rounded-full',
             )}
           >
             MS
           </span>
           <div className={cn('min-w-0', collapsed && 'sr-only')}>
             <span className="block truncate text-sm font-semibold text-sidebar-foreground">{appName}</span>
-            <span className="block truncate text-xs text-muted-foreground">Operations workspace</span>
+            {!compactBrand ? (
+              <span className="block truncate text-xs text-muted-foreground">Operations workspace</span>
+            ) : null}
           </div>
         </Link>
       </div>
+
+      {!collapsed && headerContent ? (
+        <div className="px-3 pb-3">
+          {headerContent}
+        </div>
+      ) : null}
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4">
         <div className="space-y-4">
@@ -426,6 +438,7 @@ export function Sidebar({
   sidebarStyle = 'inset',
   mobileOpen = false,
   onMobileOpenChange,
+  headerContent,
   footer,
   userLabel,
   userDescription,
@@ -435,6 +448,7 @@ export function Sidebar({
 }: SidebarProps) {
   const navGroups = groups ?? [{ items }]
   const floating = sidebarStyle === 'floating'
+  const inset = sidebarStyle === 'inset'
 
   return (
     <>
@@ -444,16 +458,22 @@ export function Sidebar({
           'fixed left-0 z-40 hidden bg-sidebar text-sidebar-foreground transition-[width,transform,opacity,left] duration-200 ease-linear md:block',
           floating
             ? 'bottom-3 top-3 ml-3 overflow-visible rounded-xl border border-sidebar-border shadow-[0_16px_48px_rgba(15,23,42,0.10)]'
-            : 'inset-y-0 overflow-visible border-r border-sidebar-border',
+            : inset
+              ? 'inset-y-0 overflow-visible'
+              : 'inset-y-0 overflow-visible border-r border-sidebar-border',
           hidden
             ? 'pointer-events-none w-0 -translate-x-8 opacity-0'
             : collapsed
               ? floating
                 ? 'w-[4rem]'
-                : 'w-[4.5rem]'
+                : inset
+                  ? 'w-[4rem]'
+                  : 'w-[4.5rem]'
               : floating
                 ? 'w-[16rem]'
-                : 'w-[17rem]',
+                : inset
+                  ? 'w-[16rem]'
+                  : 'w-[17rem]',
         )}
       >
         <SidebarContent
@@ -461,7 +481,8 @@ export function Sidebar({
           groups={navGroups}
           pathname={pathname}
           collapsed={collapsed && !hidden}
-          floating={floating}
+          headerContent={headerContent}
+          floating={floating || inset}
           footer={footer}
           userLabel={userLabel}
           userDescription={userDescription}
@@ -493,6 +514,7 @@ export function Sidebar({
               groups={navGroups}
               pathname={pathname}
               collapsed={false}
+              headerContent={headerContent}
               floating={false}
               footer={footer}
               userLabel={userLabel}

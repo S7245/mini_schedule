@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Inbox } from 'lucide-react'
+import { Inbox, PlusCircle } from 'lucide-react'
 import { useAdminLogout } from '@mini-schedule/api/admin'
 import { useAuthStore } from '@mini-schedule/api/auth'
 import { getBackofficePageLabel } from '@mini-schedule/admin-system'
@@ -23,6 +23,10 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
   const logoutMutation = useAdminLogout()
+  const adminNavGroups = [
+    { label: '控制台', items: adminNavItems.slice(0, 5) },
+    { label: '平台运维', items: adminNavItems.slice(5) },
+  ]
 
   const handleLogout = async () => {
     try {
@@ -39,14 +43,33 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
       <ProtectedAppLayout
         appName="平台管理后台"
         navItems={adminNavItems}
+        navGroups={adminNavGroups}
         pathname={pathname}
-        sidebarStyle="floating"
+        sidebarStyle="inset"
+        sidebarHeaderContent={
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" className="h-8 flex-1 justify-start rounded-lg px-3">
+              <Link href="/brands">
+                <PlusCircle className="mr-2 size-4" />
+                新建品牌
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="icon"
+              className="size-8 rounded-lg border-sidebar-border bg-background/80 shadow-none"
+            >
+              <Link href="/messages">
+                <Inbox className="size-4" />
+                <span className="sr-only">消息中心</span>
+              </Link>
+            </Button>
+          </div>
+        }
         sidebarFooter={
-          <div className="rounded-xl border border-sidebar-border bg-background/80 p-3 text-sidebar-foreground shadow-sm">
-            <p className="text-sm font-semibold">需要更多帮助？</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              查看消息中心，或联系平台管理员处理运营问题。
-            </p>
+          <div className="px-1 pb-1 text-xs leading-5 text-muted-foreground">
+            查看消息中心，或联系平台管理员处理运营问题。
           </div>
         }
         topbarTitle={getBackofficePageLabel(

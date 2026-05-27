@@ -122,7 +122,7 @@ export function Topbar({
           <button
             type="button"
             aria-label="打开导航"
-            className="grid size-8 place-items-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground md:hidden"
+            className="grid size-8 place-items-center rounded-md text-foreground/75 transition hover:bg-accent hover:text-foreground md:hidden"
             onClick={onOpenMobileSidebar}
           >
             <Menu className="size-4" />
@@ -130,7 +130,7 @@ export function Topbar({
           <button
             type="button"
             aria-label={sidebarCollapsed ? '展开导航' : '折叠导航'}
-            className="hidden size-8 place-items-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground md:grid"
+            className="hidden size-8 place-items-center rounded-md text-foreground/75 transition hover:bg-accent hover:text-foreground md:grid"
             onClick={onToggleSidebar}
           >
             <PanelLeft className={cn('size-4 transition-transform', sidebarCollapsed && 'rotate-180')} />
@@ -138,7 +138,7 @@ export function Topbar({
           <span className="mx-2 hidden h-4 w-px shrink-0 bg-border md:block" />
           <button
             type="button"
-            className="hidden h-8 items-center gap-2 rounded-md px-0 text-sm font-normal text-muted-foreground transition hover:text-foreground sm:flex"
+            className="hidden h-8 items-center gap-2 rounded-md px-0 text-sm font-normal text-foreground/75 transition hover:text-foreground sm:flex"
           >
             <Search className="size-4" />
             <span>{searchPlaceholder}</span>
