@@ -2,12 +2,20 @@
   "name": "@mini-schedule/admin",
   "version": "0.0.1",
   "private": true,
+  "main": "electron/dist/main.js",
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint .",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next electron/dist dist-electron",
+
+    "electron:compile": "tsc -p tsconfig.electron.json",
+    "electron:dev": "concurrently -k -n \"next,electron\" -c \"cyan,yellow\" \"next dev -p 3001\" \"wait-on http://127.0.0.1:3001 && electron .\"",
+    "electron:build": "next build && tsc -p tsconfig.electron.json && electron-builder --config electron-builder.config.js",
+    "electron:build:mac": "next build && tsc -p tsconfig.electron.json && electron-builder --mac --config electron-builder.config.js",
+    "electron:build:win": "next build && tsc -p tsconfig.electron.json && electron-builder --win --config electron-builder.config.js",
+    "electron:build:linux": "next build && tsc -p tsconfig.electron.json && electron-builder --linux --config electron-builder.config.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -38,9 +46,13 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "concurrently": "^9.1.0",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4.1.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "wait-on": "^8.0.1"
   }
 }

@@ -9,3 +9,7 @@ out/
 *.local
 .env*
 .vercel
+
+# Electron build artifacts
+apps/admin/electron/dist/
+apps/admin/dist-electron/

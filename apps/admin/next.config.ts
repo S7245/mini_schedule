@@ -1,9 +1,14 @@
 import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Outputs a self-contained Node.js server at .next/standalone/ for Electron packaging
+  output: 'standalone',
+  // Fix monorepo workspace root detection — point to the web monorepo root
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   async rewrites() {
     return [
       {
