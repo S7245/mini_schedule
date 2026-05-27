@@ -1,15 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { Activity, ArrowUpRight, Building2, CircleAlert, Inbox, Server, Shield } from 'lucide-react'
-import { useAdmins, useBrands } from '@mini-schedule/api/admin'
+import { Activity, ArrowUpRight, Building2, CircleAlert, CreditCard, Inbox, Package, Server, Shield, WalletCards } from 'lucide-react'
+import { useAdmins, useBrands, usePlatformSummary } from '@mini-schedule/api/admin'
 import { Button } from '@/components/ui/button'
 import { DashboardPageTemplate } from '@mini-schedule/admin-system/templates/dashboard-page-template'
 import { PageHeader } from '@mini-schedule/admin-system/components/page-header'
 import { StatCard } from '@mini-schedule/admin-system/components/stat-card'
 import { SectionCard } from '@mini-schedule/admin-system/components/section-card'
 import type { Brand, PageResponse } from '@mini-schedule/types'
-import { adminMessagePreview, adminMessageSummary } from '@/lib/message-center-data'
+import { adminMessagePreview } from '@/lib/message-center-data'
 import type { MessageCenterItem } from '@mini-schedule/admin-system/models/message-center'
 
 function formatCount(value?: number) {
@@ -136,21 +136,28 @@ export default function DashboardPage() {
     isLoading: boolean
     isError: boolean
   }
+  const summaryQuery = usePlatformSummary()
 
   const brands = brandsQuery.data?.items ?? []
-  const isLoading = brandsQuery.isLoading || adminsQuery.isLoading
-  const hasError = brandsQuery.isError || adminsQuery.isError
+  const summary = summaryQuery.data
+  const isLoading = brandsQuery.isLoading || adminsQuery.isLoading || summaryQuery.isLoading
+  const hasError = brandsQuery.isError || adminsQuery.isError || summaryQuery.isError
 
   return (
     <DashboardPageTemplate
       header={
         <PageHeader
           title="平台概览"
-          description="关注品牌入驻、平台账号与运营健康度。当前版本优先呈现骨架和可验证数据，待后端 summary API 完成后替换汇总指标。"
+          description="关注品牌入驻、套餐订阅、支付异常和平台运营健康度。"
           actions={
-            <Button asChild>
-              <Link href="/brands">管理品牌</Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/saas-plans">套餐管理</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/subscriptions">订阅管理</Link>
+              </Button>
+            </div>
           }
         />
       }
@@ -158,31 +165,31 @@ export default function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="品牌总数"
-            value={isLoading ? '--' : formatCount(brandsQuery.data?.total)}
-            hint="来自品牌分页接口的 total"
+            value={isLoading ? '--' : formatCount(summary?.brand_total ?? brandsQuery.data?.total)}
+            hint={`待开通 ${formatCount(summary?.pending_brand_total)}，活跃 ${formatCount(summary?.active_brand_total)}`}
             trend={hasError ? '异常' : '实时'}
             tone={hasError ? 'danger' : 'success'}
           />
           <StatCard
-            label="平台管理员"
-            value={isLoading ? '--' : formatCount(adminsQuery.data?.total)}
-            hint="当前可登录后台的账号数"
+            label="有效订阅"
+            value={isLoading ? '--' : formatCount(summary?.active_subscription_total)}
+            hint={`7 天内到期 ${formatCount(summary?.expiring_in_7_days_total)}`}
             trend={hasError ? '异常' : '实时'}
             tone={hasError ? 'danger' : 'success'}
           />
           <StatCard
-            label="未读消息"
-            value={String(adminMessageSummary.unread)}
-            hint="待平台运营优先处理的消息"
-            trend={`${adminMessageSummary.highPriority} 条高优`}
-            tone={adminMessageSummary.highPriority > 0 ? 'warning' : 'success'}
+            label="今日支付"
+            value={isLoading ? '--' : `¥${summary?.today_paid_amount ?? '0'}`}
+            hint={`今日订单 ${formatCount(summary?.today_order_total)}`}
+            trend="微信/支付宝"
+            tone="success"
           />
           <StatCard
-            label="运营健康"
-            value={hasError ? '需检查' : '稳定'}
-            hint="基于当前前端接口请求状态"
-            trend={hasError ? '关注' : 'OK'}
-            tone={hasError ? 'danger' : 'success'}
+            label="待处理异常"
+            value={isLoading ? '--' : formatCount((summary?.exception_order_total ?? 0) + (summary?.failed_callback_total ?? 0))}
+            hint={`受限/冻结 ${formatCount(summary?.restricted_or_frozen_total)}`}
+            trend={hasError ? '关注' : '处理'}
+            tone={hasError || (summary?.exception_order_total ?? 0) > 0 || (summary?.failed_callback_total ?? 0) > 0 ? 'warning' : 'success'}
           />
         </div>
       }
@@ -214,6 +221,9 @@ export default function DashboardPage() {
             <div className="space-y-2">
               {[
                 { href: '/brands', label: '查看品牌库', icon: Building2 },
+                { href: '/saas-plans', label: '配置平台套餐', icon: Package },
+                { href: '/subscriptions', label: '处理订阅补偿', icon: WalletCards },
+                { href: '/payments', label: '查看支付异常', icon: CreditCard },
                 { href: '/admins', label: '管理平台账号', icon: Shield },
                 { href: '/brands', label: '处理入驻状态', icon: CircleAlert },
               ].map((item) => (
@@ -252,7 +262,7 @@ export default function DashboardPage() {
                   Summary API
                 </span>
                 <span className="rounded-full bg-background/10 px-2 py-0.5 text-xs text-background">
-                  待后端接入
+                  {summaryQuery.isError ? '检查接口' : '请求正常'}
                 </span>
               </div>
             </div>
