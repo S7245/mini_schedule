@@ -11,7 +11,7 @@
     "clean": "rm -rf .next electron/dist dist-electron",
 
     "electron:compile": "tsc -p tsconfig.electron.json",
-    "electron:dev": "concurrently -k -n \"next,electron\" -c \"cyan,yellow\" \"next dev -p 3001\" \"wait-on http://127.0.0.1:3001 && electron .\"",
+    "electron:dev": "tsc -p tsconfig.electron.json && concurrently -k -n \"next,tsc,electron\" -c \"cyan,magenta,yellow\" \"next dev -p 3001\" \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"wait-on http://127.0.0.1:3001 && electron .\"",
     "electron:build": "next build && tsc -p tsconfig.electron.json && electron-builder --config electron-builder.config.js",
     "electron:build:mac": "next build && tsc -p tsconfig.electron.json && electron-builder --mac --config electron-builder.config.js",
     "electron:build:win": "next build && tsc -p tsconfig.electron.json && electron-builder --win --config electron-builder.config.js",
