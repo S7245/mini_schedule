@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Inbox, PlusCircle, X } from 'lucide-react'
@@ -22,6 +22,17 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [supportCardOpen, setSupportCardOpen] = useState(true)
+  const [sidebarTopInset, setSidebarTopInset] = useState(0)
+
+  useEffect(() => {
+    // On macOS Electron the traffic lights sit at y=16 inside the window.
+    // Push the sidebar header down 28px so the "MS" logo clears them.
+    if (window.electronAPI) {
+      window.electronAPI.getPlatform().then((platform) => {
+        if (platform === 'darwin') setSidebarTopInset(28)
+      })
+    }
+  }, [])
   const logout = useAuthStore((state) => state.logout)
   const user = useAuthStore((state) => state.user)
   const logoutMutation = useAdminLogout()
@@ -48,6 +59,7 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         navGroups={adminNavGroups}
         pathname={pathname}
         sidebarStyle="inset"
+        sidebarTopInset={sidebarTopInset}
         sidebarHeaderContent={
           <div className="flex items-center gap-2">
             <Button asChild size="sm" className="h-8 flex-1 justify-start rounded-md px-2">

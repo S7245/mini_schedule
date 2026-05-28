@@ -31,6 +31,8 @@ interface SidebarProps {
   onMobileOpenChange?: (open: boolean) => void
   headerContent?: ReactNode
   footer?: ReactNode
+  /** Extra top padding (px) to clear OS chrome — e.g. macOS traffic lights */
+  topInset?: number
   userLabel?: string
   userDescription?: string
   logoutLabel?: string
@@ -267,6 +269,7 @@ function SidebarContent({
   headerContent,
   footer,
   floating = false,
+  topInset = 0,
   userLabel,
   userDescription,
   logoutLabel,
@@ -281,6 +284,7 @@ function SidebarContent({
   headerContent?: ReactNode
   footer?: ReactNode
   floating?: boolean
+  topInset?: number
   userLabel?: string
   userDescription?: string
   logoutLabel?: string
@@ -354,7 +358,10 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div className={cn('flex flex-col gap-2 p-2', collapsed && 'items-center')}>
+      <div
+        className={cn('flex flex-col gap-2 p-2', collapsed && 'items-center')}
+        style={topInset > 0 ? { paddingTop: `${8 + topInset}px` } : undefined}
+      >
         <Link
           href="/dashboard"
           onClick={onNavigate}
@@ -450,6 +457,7 @@ export function Sidebar({
   onMobileOpenChange,
   headerContent,
   footer,
+  topInset = 0,
   userLabel,
   userDescription,
   logoutLabel,
@@ -493,6 +501,7 @@ export function Sidebar({
           collapsed={collapsed && !hidden}
           headerContent={headerContent}
           floating={floating || inset}
+          topInset={topInset}
           footer={footer}
           userLabel={userLabel}
           userDescription={userDescription}

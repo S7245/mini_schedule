@@ -22,6 +22,8 @@ interface ProtectedAppLayoutProps {
   sidebarHeaderContent?: ReactNode
   sidebarFooter?: ReactNode
   sidebarStyle?: SidebarStyle
+  /** Extra top padding (px) for the sidebar — use to clear OS chrome (e.g. macOS traffic lights) */
+  sidebarTopInset?: number
   searchPlaceholder?: string
   userLabel?: string
   userDescription?: string
@@ -53,6 +55,7 @@ export function ProtectedAppLayout({
   sidebarHeaderContent,
   sidebarFooter,
   sidebarStyle,
+  sidebarTopInset = 0,
   searchPlaceholder,
   userLabel,
   userDescription,
@@ -112,6 +115,7 @@ export function ProtectedAppLayout({
           onMobileOpenChange={setMobileOpen}
           headerContent={sidebarHeaderContent}
           footer={sidebarFooter}
+          topInset={sidebarTopInset}
           userLabel={userLabel}
           userDescription={userDescription}
           logoutLabel={logoutLabel}
