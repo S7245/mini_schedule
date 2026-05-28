@@ -114,12 +114,12 @@ function NavLink({
         onMouseLeave={onTooltipHide}
         onClick={onNavigate}
         className={cn(
-          'group relative flex min-h-9 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150',
+          'group relative flex h-8 items-center gap-2 overflow-hidden rounded-md px-2 text-sm font-medium transition-colors duration-150',
           active
             ? 'bg-sidebar-accent text-sidebar-accent-foreground'
             : 'text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground',
-          collapsed && !nested && 'justify-center px-2',
-          nested && 'min-h-8 pl-10 text-[13px]'
+          collapsed && !nested && 'size-8 justify-center p-2',
+          nested && 'h-8 pl-8 text-[13px]'
         )}
       >
         {item.icon ? (
@@ -354,11 +354,18 @@ function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div className={cn('flex h-14 items-center px-4', compactBrand && 'h-12 px-3', collapsed && 'justify-center px-2')}>
-        <Link href="/dashboard" onClick={onNavigate} className="flex min-w-0 items-center gap-3">
+      <div className={cn('flex flex-col gap-2 p-2', collapsed && 'items-center')}>
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className={cn(
+            'flex h-8 w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 text-left text-sm font-medium transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            collapsed && 'size-8 justify-center p-2',
+          )}
+        >
           <span
             className={cn(
-              'grid size-9 shrink-0 place-items-center bg-primary text-sm font-semibold text-primary-foreground',
+              'grid size-8 shrink-0 place-items-center bg-primary text-sm font-semibold text-primary-foreground',
               compactBrand ? 'rounded-lg shadow-sm' : 'rounded-full',
             )}
           >
@@ -374,21 +381,24 @@ function SidebarContent({
       </div>
 
       {!collapsed && headerContent ? (
-        <div className="px-3 pb-3">
+        <div className="p-2 pt-0">
           {headerContent}
         </div>
       ) : null}
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4">
-        <div className="space-y-4">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-2">
+        <div className={cn(collapsed && 'flex flex-col items-center')}>
           {groups.map((group, index) => (
-            <div key={group.label ?? `group-${index}`} className="space-y-2">
+            <div
+              key={group.label ?? `group-${index}`}
+              className={cn('py-2', collapsed && 'flex w-full flex-col items-center')}
+            >
               {group.label && !collapsed ? (
-                <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/90">
+                <p className="flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70">
                   {group.label}
                 </p>
               ) : null}
-              <div className="space-y-1">
+              <div className={cn(collapsed && 'flex w-full flex-col items-center')}>
                 {group.items.map((item) => (
                   <NavLink
                     key={item.href}
@@ -406,7 +416,7 @@ function SidebarContent({
         </div>
       </nav>
 
-      <div className={cn('space-y-3 p-3 pt-0', collapsed && 'px-2')}>
+      <div className={cn('space-y-2 p-2 pt-0', collapsed && 'flex flex-col items-center')}>
         {!collapsed ? footer : null}
         <SidebarUserCard
           collapsed={collapsed}
@@ -457,13 +467,13 @@ export function Sidebar({
         className={cn(
           'fixed left-0 z-40 hidden bg-sidebar text-sidebar-foreground transition-[width,transform,opacity,left] duration-200 ease-linear md:block',
           floating
-            ? 'bottom-3 top-3 ml-3 overflow-visible rounded-xl border border-sidebar-border shadow-[0_16px_48px_rgba(15,23,42,0.10)]'
+            ? 'bottom-3 top-3 ml-3 overflow-visible rounded-xl border border-sidebar-border p-2 shadow-[0_16px_48px_rgba(15,23,42,0.10)]'
             : inset
-              ? 'inset-y-0 overflow-visible'
+              ? 'inset-y-0 overflow-visible p-2'
               : 'inset-y-0 overflow-visible border-r border-sidebar-border',
-          hidden
-            ? 'pointer-events-none w-0 -translate-x-8 opacity-0'
-            : collapsed
+            hidden
+              ? 'pointer-events-none w-0 -translate-x-8 opacity-0'
+              : collapsed
               ? floating
                 ? 'w-[4rem]'
                 : inset
@@ -472,7 +482,7 @@ export function Sidebar({
               : floating
                 ? 'w-[16rem]'
                 : inset
-                  ? 'w-[16rem]'
+                  ? 'w-[17rem]'
                   : 'w-[17rem]',
         )}
       >

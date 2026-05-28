@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Type declarations for the Electron context bridge API.
  * Present only when the app runs inside Electron; undefined in the browser.

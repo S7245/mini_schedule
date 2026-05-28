@@ -15,7 +15,7 @@ export function ResourceListPage({
     <div className="space-y-6">
       {header}
       {filters}
-      <section className="overflow-hidden rounded-xl border border-border/80 bg-card/96 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur">
+      <section className="overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-foreground/10">
         {content}
         {footer ? <div className="border-t border-border/70">{footer}</div> : null}
       </section>

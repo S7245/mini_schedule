@@ -32,7 +32,7 @@ export function AppShell({
       : floatingSidebar
         ? 'md:pl-[17.5rem]'
         : insetSidebar
-          ? 'md:pl-[16.75rem]'
+          ? 'md:pl-[17rem]'
           : 'md:pl-[17rem]'
 
   return (
@@ -62,7 +62,7 @@ export function AppShell({
         <div
           className={cn(
             'flex min-h-0 min-w-0 flex-1 flex-col',
-            insetSidebar && 'md:min-h-[calc(100svh-1rem)] md:overflow-clip md:rounded-[1.25rem] md:border md:border-border/70 md:bg-background md:shadow-sm',
+            insetSidebar && 'md:min-h-[calc(100svh-1rem)] md:overflow-clip md:rounded-xl md:border md:border-border md:bg-background md:shadow-sm',
           )}
         >
           {topbar}
