@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,8 +20,19 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const loginMutation = useBrandLogin()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 'next' is the canonical post-login redirect for Batch 4 onboarding entry.
+  // Fall back to legacy 'callbackUrl' if present, then default to /dashboard.
+  function resolveRedirect(): string {
+    const next = searchParams.get('next')
+    if (next && next.startsWith('/')) return next
+    const cb = searchParams.get('callbackUrl')
+    if (cb && cb.startsWith('/')) return cb
+    return '/dashboard'
+  }
 
   const {
     register,
@@ -36,7 +47,7 @@ export default function LoginPage() {
     setIsSubmitting(true)
     try {
       await loginMutation.mutateAsync(data)
-      router.push('/dashboard')
+      router.push(resolveRedirect())
     } finally {
       setIsSubmitting(false)
     }
