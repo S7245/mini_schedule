@@ -1,17 +1,71 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Inbox } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowUpRight, Inbox, Rocket } from 'lucide-react'
+import { useBrandOnboardingStatus } from '@mini-schedule/api/onboarding'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProtectedLayout } from '@/components/layout/protected-layout'
 import { brandMessagePreview, brandMessageSummary } from '@/lib/message-center-data'
+import {
+  ONBOARDING_STEP_KEYS,
+  ONBOARDING_STEP_LABELS,
+} from '@/components/onboarding/wizard-shell'
 import type { MessageCenterItem } from '@mini-schedule/admin-system/models/message-center'
+
+function OnboardingProgressCard() {
+  const { data } = useBrandOnboardingStatus()
+  if (!data) return null
+  if (data.overall_status === 'completed') return null
+
+  const totalSteps = ONBOARDING_STEP_KEYS.length
+  const doneSteps = data.steps.filter(
+    (s) => s.status === 'completed' || s.status === 'skipped',
+  ).length
+  const pct = Math.round((doneSteps / totalSteps) * 100)
+  const nextKey = data.next_step_key
+  const nextLabel = nextKey ? ONBOARDING_STEP_LABELS[nextKey] : '继续开通'
+
+  return (
+    <Card className="mb-6 border-primary/30 bg-primary/5" data-testid="dashboard-onboarding-card">
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Rocket className="size-5 text-primary" />
+            完成品牌开通
+          </CardTitle>
+          <CardDescription className="mt-1">
+            还差 {totalSteps - doneSteps} 步：下一步「{nextLabel}」
+          </CardDescription>
+        </div>
+        <Button asChild>
+          <Link href="/onboarding">继续完成开通</Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full bg-primary transition-all"
+            style={{ width: `${pct}%` }}
+            data-testid="dashboard-onboarding-progress"
+            data-progress={pct}
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          已完成 {doneSteps}/{totalSteps} 步
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function DashboardPage() {
   return (
     <ProtectedLayout>
       <div className="p-8">
         <h1 className="text-2xl font-bold mb-6">概览</h1>
+
+        <OnboardingProgressCard />
 
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
