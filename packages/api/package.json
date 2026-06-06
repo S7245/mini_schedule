@@ -9,7 +9,11 @@
     "./brand": "./src/brand.ts",
     "./admin": "./src/admin.ts",
     "./app": "./src/app.ts",
-    "./generated": "./generated/api.d.ts"
+    "./generated": "./generated/api.d.ts",
+    "./public": "./src/public.ts",
+    "./onboarding": "./src/onboarding.ts",
+    "./brand-profile": "./src/brand-profile.ts",
+    "./locations": "./src/locations.ts"
   },
   "scripts": {
     "generate": "openapi-typescript ../../backend/docs/swagger.json -o ./generated/api.d.ts",

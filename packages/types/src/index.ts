@@ -21,6 +21,12 @@ export interface PageResponse<T> {
 
 export type BrandStatus = 'active' | 'suspended' | 'pending'
 
+export type BrandOnboardingStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'skipped_partial'
+  | 'completed'
+
 export interface Brand {
   id: string
   name: string
@@ -28,9 +34,106 @@ export interface Brand {
   contact_name: string | null
   contact_phone: string | null
   contact_email: string | null
+  description?: string | null
+  industry_type?: string | null
+  brand_code?: string | null
   status: BrandStatus
+  onboarding_status?: BrandOnboardingStatus
+  onboarding_completed_at?: string | null
   created_at: string
   updated_at: string
+}
+
+export type BrandProfile = Brand
+
+export interface UpdateBrandProfileInput {
+  logo_url?: string | null
+  description?: string | null
+  industry_type?: string | null
+  brand_code?: string | null
+  contact_email?: string | null
+}
+
+// ─── Onboarding ──────────────────────────────────────────
+
+export type OnboardingStepKey =
+  | 'brand_profile'
+  | 'location'
+  | 'staff'
+  | 'course_category'
+  | 'course_template'
+  | 'entitlement_template'
+  | 'class_session'
+  | 'mini_program_qrcode'
+
+export type OnboardingStepStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'completed'
+  | 'skipped'
+
+export interface OnboardingStep {
+  step_key: OnboardingStepKey
+  status: OnboardingStepStatus
+  completed_at: string | null
+  skipped_at: string | null
+  count: number
+  target: number
+}
+
+export interface OnboardingStatus {
+  overall_status: BrandOnboardingStatus
+  steps: OnboardingStep[]
+  next_step_key: OnboardingStepKey | null
+}
+
+export interface SkipOnboardingStepInput {
+  reason?: string
+}
+
+export interface SkipOnboardingStepResult {
+  step_key: OnboardingStepKey
+  status: OnboardingStepStatus
+  skipped_at: string | null
+}
+
+export interface CompleteOnboardingResult {
+  overall_status: BrandOnboardingStatus
+  onboarding_completed_at: string | null
+}
+
+// ─── Location ────────────────────────────────────────────
+
+export type LocationStatus = 'active' | 'inactive'
+
+export interface Location {
+  id: number
+  brand_id: number
+  name: string
+  address: string | null
+  phone: string | null
+  remark: string | null
+  status: LocationStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateLocationInput {
+  name: string
+  address?: string
+  phone?: string
+  remark?: string
+}
+
+export interface UpdateLocationInput {
+  name?: string
+  address?: string
+  phone?: string
+  remark?: string
+}
+
+export interface UpdateLocationStatusInput {
+  status: LocationStatus
 }
 
 // ─── User ────────────────────────────────────────────────
@@ -304,6 +407,16 @@ export interface PaymentCallbackLog {
   processed_at?: string
   error_message?: string
   created_at: string
+}
+
+// (Onboarding / BrandProfile / Location types defined earlier in this file)
+
+export type LocationStatusFilter = LocationStatus | 'all'
+
+export interface LocationsQuery {
+  page?: number
+  page_size?: number
+  status?: LocationStatusFilter
 }
 
 export interface OperationLog {
