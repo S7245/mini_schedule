@@ -71,3 +71,61 @@
 - Toast：`sonner`，全局 Toaster 已在 `providers.tsx` 注册（`position="top-right" richColors`）。直接 `import { toast } from 'sonner'`，**不要再加一个 Toaster**。
 - Lint 现状：brand 没有 `eslint.config.*`，`pnpm lint` 跑废弃命令。Batch 4 开发完用 `pnpm --filter @mini-schedule/brand exec tsc --noEmit` 自检。
 - 后端错误码常量在 `packages/api/src/errors.ts` 的 `ErrorCodes`，需要按 code 分支处理时 import 它，**不要字符串字面量比较**。
+
+## 2026-06-06 Batch 4 onboarding/locations patterns
+
+落地后回看与 Pre-Batch-4 baseline 的偏差，沉淀给 Batch 5 复用。
+
+### 1. WizardShell 实际未抽到共享包，定位在 brand app
+
+最终 `apps/brand/components/onboarding/wizard-shell.tsx` 一并 export `ONBOARDING_STEP_KEYS / _LABELS / _ROUTES / SKIPPABLE_STEP_KEYS` 四个常量 —— **页面拿步骤元数据直接从 `wizard-shell` import**，没有单独抽 constants 文件。Batch 5 加新业务步骤时，去 wizard-shell 改这四个 map 即可，不要新建 `onboarding-meta.ts`。signup 流程仍在用 `components/signup/page-shell`，目前没合并，baseline 里"signup 和 onboarding 都用同一个 shell"的设想没实现 —— 两者视觉相近但导航语义不同（signup 线性 / onboarding 可跳），强行合并反而复杂。
+
+### 2. 三层守卫：middleware → (protected)/layout → onboarding/layout
+
+`onboarding/layout.tsx` 是第三层，处理三种重定向语义：
+- 未登录 → `/login?next=${pathname}`（即便父层已踢，仍显式写一次，处理直链）
+- `profileQuery.data.status !== 'active'` → `/signup/plan`（没拿到 order_id，让用户重新选套餐生成新单）
+- `statusQuery.data.overall_status === 'completed'` → `/dashboard`
+
+三个 effect **互不依赖、彼此独立**，render 时再做 `if (!brand || ... ) return null` 兜底，避免 effect 还没跑就闪出错误内容。Batch 5 任何"完成后强制离开"的页面（如 staff 完成跳次页）都照这个模板：分多个 effect + render null gate。
+
+### 3. shadcn switch 没装，按"link-button + ConfirmDialog"模式实现状态切换
+
+baseline 预测要 `npx shadcn add switch`，实际**没装**。`LocationStatusToggle` 用普通 `<button>` + 颜色（active 用 amber-600 停用 / inactive 用 green-600 启用）+ `ConfirmDialog` 二次确认。
+
+**何时该写自定义而不是装新组件**：状态切换涉及破坏性副作用（停用门店影响小程序展示）时，Switch 的"立即切换"语义反而危险；改用 link-button + Confirm 让操作可被取消，且与已有的 courses 发布/归档操作视觉一致。Batch 5 的 Staff 启用/停用、Course 上架/下架直接复用 `LocationStatusToggle` 这个 pattern（替换 hook 和文案）。
+
+### 4. ConfirmDialog 已通用，放 `components/common/`
+
+`apps/brand/components/common/confirm-dialog.tsx` 暴露 `{open, title, description: ReactNode, confirmText, destructive, loading, onCancel, onConfirm}`，`onConfirm` 可 async，自己管 pending 状态。Batch 5 的 CRUD 删除/停用直接 import，**不要每页再写一个**。description 接 `ReactNode` 不是 string —— 允许内嵌高亮字段名（如 "门店「<span>X</span>」"），删除前展示真实数据。
+
+### 5. 支付成功 → `/login?next=/onboarding` 而不是 sessionStorage 接力
+
+支付页轮询到 paid 后，由用户**点 CTA** 跳 `/login?next=${encodeURIComponent('/onboarding')}`，登录页用 `searchParams.get('next')` 解析，校验 `next.startsWith('/')` 防开放重定向，回退顺序 `next → callbackUrl → /dashboard`。
+
+**取舍**：sessionStorage 接力会被新窗口/隐私模式打破；URL param 是无状态串接，刷新/分享/退回任何时候都能恢复，且 next 是 brand 域名内部路径，安全风险只剩"防御外部 URL 注入"（一行 startsWith 检查即可）。Batch 5 任何"操作完成 → 跳登录 → 再跳目标页"的场景都用 next 参数，不要回头用 sessionStorage。
+
+附带：login 用了 `useSearchParams`，**必须 Suspense 包裹**默认 export 的 page 组件，否则 Next 15 prerender 会 bail out。Batch 5 其他需 searchParams 的页同样规则。
+
+### 6. QUOTA_EXCEEDED 同时 toast + inline，SUBSCRIPTION_RESTRICTED 同样
+
+`LocationFormDialog.mapApiError` 把后端 code 映射成中文文案，**但对 `QUOTA_EXCEEDED / SUBSCRIPTION_RESTRICTED` 这两类"需要用户去做别的事"的错误，同时 `toast.error(msg)` + `setApiError(msg)` 双展示**：toast 抓眼球告诉用户"出问题了"，inline 留在表单里让用户能看到上下文（哪些字段已填）。其他普通校验错误（如 name 重复）只 inline，不打扰。
+
+后端 QUOTA_EXCEEDED 的 `Response.Data: {current, max}` 当前**没在 UI 利用** —— 文案是写死的"请联系平台升级套餐"。如果 Batch 5 接入套餐升级页，可以改成 `已用 ${current}/${max}，[升级套餐]` 内联可点链接。
+
+### 7. 列表页复合 pattern：表格 + Dialog + StatusToggle + ConfirmDialog
+
+`onboarding/locations/page.tsx` 是一个完整的 CRUD 复合页范式，由 4 个组件协同 + 3 个本地 state 驱动：
+```
+state: { dialogOpen, editing: T|null, pendingDelete: T|null }
+components: <Table> + <LocationFormDialog open initial=editing> + <StatusToggleButton> + <ConfirmDialog open=Boolean(pendingDelete)>
+```
+
+特点：**`editing=null` 走创建，`editing=T` 走编辑，不开两个 dialog**；删除二次确认用单独的 `pendingDelete` state，与 dialogOpen 解耦。Batch 5 的 Staff / Course / Entitlement / Class Session CRUD 全部按此结构开页。
+
+### 8. baseline 预测 ResourceListPage / DataTable，实际用了原生 shadcn Table
+
+baseline 推荐 `@mini-schedule/admin-system` 的 `ResourceListPage` + `DataTable`，locations 实际**没用** —— 直接用 shadcn `Table` + 自管分页 state。原因：onboarding step 的"表格"是嵌在 WizardShell 里的简短列表（page_size=50 一页够），不是完整管理页；不需要 filter / 分页 / URL 同步那一套。
+
+Batch 5 判断标准：**onboarding step 内的列表用裸 Table；`(protected)/locations/page.tsx` 这种"长期管理页"才上 ResourceListPage**。两者可以共用 `LocationFormDialog`、`LocationStatusToggle`，但顶层 page 结构不同。
+

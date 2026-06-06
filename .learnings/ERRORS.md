@@ -27,3 +27,21 @@
 ### shadcn 增量安装
 
 - `components.json` 用 `style: new-york`、`baseColor: slate`、alias `@/components`、`@/lib/utils`、CSS variables。Batch 4 新加 shadcn 组件（如 `switch`、`alert-dialog`）请在 `apps/brand` 目录内跑 `npx shadcn add`，**不要在 monorepo 根目录跑**，否则会装错位置。
+
+## 2026-06-06 Batch 4 落地踩到的新坑
+
+### Next 15 `useSearchParams` prerender bailout
+
+- `(auth)/login/page.tsx` 接入 `next=` 参数后，dev 没报错，**prod build 直接 fail**：`useSearchParams() should be wrapped in a suspense boundary at page "/login"`。修法：把整个 page 内容抽到 `LoginPageInner` 函数，默认 export 用 `<Suspense fallback={...}><LoginPageInner /></Suspense>` 包一层（见 commit `3d46fbb`）。Batch 5 任何 page-level 用 `useSearchParams / useParams` + 同步读 query 的页，都按此包 Suspense。
+
+### DialogDescription 嵌套字段名要用 `asChild`
+
+- `ConfirmDialog.description` 接 `ReactNode`，里面常带 `<span className="font-medium">` 高亮字段名。**shadcn `DialogDescription` 默认 render `<p>`，里面再放 `<div>` 会 hydration warning**。修法：用 `<DialogDescription asChild><div>...</div></DialogDescription>`（见 `confirm-dialog.tsx`）。Batch 5 复用 ConfirmDialog 时如果只传纯字符串可省略，但传 JSX 务必保留 asChild。
+
+### onboarding/layout 三 effect 串联可能短促闪现 loading 文案
+
+- `profileQuery` 和 `statusQuery` 是并行触发，两个都 isLoading 时显示"正在加载初始化向导..."。如果 brand status=cancelled 但 status query 还在飞，**会先闪一下加载文案再 replace 到 /signup/plan**。当前可接受，但若 Batch 5 有更严格的"不能看到 onboarding shell 一帧"需求，需把 redirect effect 改成 `useLayoutEffect` 或 SSR 校验。
+
+### `/locations` 路径是步骤 2 而不是日常管理页
+
+- `apps/brand/app/(protected)/onboarding/locations/page.tsx` 是 onboarding step 内的 CRUD，**它不是"日常门店管理页"**。Batch 5 若加 `apps/brand/app/(protected)/locations/page.tsx`（独立菜单项），注意两者要共用 `LocationFormDialog / LocationStatusToggle / ConfirmDialog` 组件，但不能直接 import 步骤页 —— 把这三个组件的位置（`components/locations/`、`components/common/`）已经摆对了，复用就是 import 三个文件 + 自己写一个 `ResourceListPage` 顶层。
