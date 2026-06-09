@@ -36,7 +36,8 @@ interface RowState {
 }
 
 function rowsFromStaff(staff: Staff): RowState[] {
-  return staff.role_assignments.map((r, i) => ({
+  // 同 location editor 的兜底逻辑：?? [] 防 owner 等场景缺字段时整页崩。
+  return (staff.role_assignments ?? []).map((r, i) => ({
     uid: `existing-${r.id ?? i}`,
     role_code: r.role_code,
     location_id: r.location_id,
@@ -187,11 +188,11 @@ export function StaffRoleAssignmentEditor({
       </CardHeader>
       <CardContent className="space-y-3">
         {!editing ? (
-          staff.role_assignments.length === 0 ? (
+          (staff.role_assignments ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">未分配角色</p>
           ) : (
             <ul className="space-y-1.5 text-sm">
-              {staff.role_assignments.map((r, i) => (
+              {(staff.role_assignments ?? []).map((r, i) => (
                 <li
                   key={`${r.role_id}-${r.location_id ?? 'brand'}-${i}`}
                   className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2"

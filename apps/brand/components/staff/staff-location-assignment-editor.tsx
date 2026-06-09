@@ -39,7 +39,9 @@ interface RowState {
 }
 
 function rowsFromStaff(staff: Staff): RowState[] {
-  return staff.location_assignments.map((a, i) => ({
+  // 后端已 d0dd639+1 移除 omitempty，但保留 ?? [] 兜底，
+  // 避免老版本 API / 缓存返回缺字段时整页崩溃。
+  return (staff.location_assignments ?? []).map((a, i) => ({
     uid: `existing-${a.id ?? i}`,
     location_id: a.location_id,
     assignment_type: a.assignment_type,
@@ -172,11 +174,11 @@ export function StaffLocationAssignmentEditor({
       </CardHeader>
       <CardContent className="space-y-3">
         {!editing ? (
-          staff.location_assignments.length === 0 ? (
+          (staff.location_assignments ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置门店任职</p>
           ) : (
             <ul className="space-y-1.5 text-sm">
-              {staff.location_assignments.map((a, i) => (
+              {(staff.location_assignments ?? []).map((a, i) => (
                 <li
                   key={`${a.location_id}-${i}`}
                   className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2"
