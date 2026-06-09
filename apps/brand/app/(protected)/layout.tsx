@@ -11,7 +11,23 @@ import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { brandNavItems } from '@/config/nav'
 import { brandMessageSummary } from '@/lib/message-center-data'
-import { PermissionsProvider } from '@/lib/permissions'
+import { PermissionsProvider, PERMISSIONS, usePermissions } from '@/lib/permissions'
+
+/**
+ * Route prefix → permission code map for menu visibility.
+ *
+ * Anything not listed here stays visible by default. The map is intentionally
+ * sparse so menu items predating Batch 6 (users / courses / trainings /
+ * messages) remain visible until their own batch defines a permission for
+ * them.
+ *
+ * Note: we hide the menu entry entirely instead of disabling it. A user
+ * without staff.view can't even see the staff section; per-action protection
+ * (create / delete / etc.) is handled at button level via disabled + tooltip.
+ */
+const NAV_HREF_PERMISSIONS: Record<string, string> = {
+  '/staff': PERMISSIONS.STAFF_VIEW,
+}
 
 interface ProtectedLayoutProps {
   children: ReactNode
@@ -31,9 +47,22 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
   const [supportCardOpen, setSupportCardOpen] = useState(true)
   const [sidebarTopInset, setSidebarTopInset] = useState(0)
   const { isAuthenticated, user, logout } = useAuthStore()
+  const { has, isLoading: permsLoading } = usePermissions()
+
+  // Filter nav by permission. While the permission set is still loading we
+  // optimistically render the full menu — otherwise the user sees the sidebar
+  // flicker / empty out on every page nav. The button-level guards (F03) keep
+  // unauthorized clicks safe during that brief window. Once loaded, items the
+  // user can't see at all are removed.
+  const visibleNavItems = brandNavItems.filter((item) => {
+    const required = NAV_HREF_PERMISSIONS[item.href]
+    if (!required) return true
+    if (permsLoading) return true
+    return has(required)
+  })
   const brandNavGroups = [
-    { label: '控制台', items: brandNavItems.slice(0, 1) },
-    { label: '品牌运营', items: brandNavItems.slice(1) },
+    { label: '控制台', items: visibleNavItems.slice(0, 1) },
+    { label: '品牌运营', items: visibleNavItems.slice(1) },
   ]
 
   useEffect(() => {
@@ -61,7 +90,7 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
   return (
     <ProtectedAppLayout
       appName="品牌管理后台"
-      navItems={brandNavItems}
+      navItems={visibleNavItems}
       navGroups={brandNavGroups}
       pathname={pathname}
       sidebarStyle="inset"
