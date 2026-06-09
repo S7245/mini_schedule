@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { ApiResponse, ApiErrorClass } from './errors'
+import { ApiResponse, ApiErrorClass, ErrorCodes } from './errors'
 
 interface RequestInitExtended extends RequestInit {
   silent?: boolean
@@ -85,13 +85,48 @@ export async function api<T>(
     )
 
     if (!silent) {
-      toast.error(json.message)
+      showErrorToast(apiError)
     }
 
     throw apiError
   }
 
   return json.data
+}
+
+/**
+ * Pull the `required` permission code out of a PERMISSION_DENIED error payload.
+ * Backend shape (Batch 6): `data: { required: string, missing: string[] }`.
+ */
+function getRequiredPermission(err: ApiErrorClass): string | null {
+  const data = err.data
+  if (data && typeof data === 'object' && 'required' in data) {
+    const v = (data as { required: unknown }).required
+    if (typeof v === 'string') return v
+  }
+  return null
+}
+
+/**
+ * Show a toast for an API error, with dedup for PERMISSION_DENIED.
+ *
+ * - PERMISSION_DENIED: surface 权限不足: <code> so the user knows which
+ *   permission is missing. We pin the toast id to `perm-<code>` so rapid
+ *   navigation through a denied area only shows one toast at a time (sonner
+ *   replaces toasts that share an id).
+ * - Everything else: plain message toast — pre-Batch-6 behaviour.
+ */
+function showErrorToast(err: ApiErrorClass) {
+  if (err.code === ErrorCodes.PERMISSION_DENIED) {
+    const required = getRequiredPermission(err)
+    const message = required
+      ? `权限不足: ${required}`
+      : err.message || '权限不足'
+    const id = `perm-${required ?? 'unknown'}`
+    toast.error(message, { id })
+    return
+  }
+  toast.error(err.message)
 }
 
 /**
