@@ -6,6 +6,9 @@ import { useUpdateBrandLocationStatus } from '@mini-schedule/api/locations'
 import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
 import type { Location, LocationStatus } from '@mini-schedule/types'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { PERMISSIONS, usePermissions } from '@/lib/permissions'
+
+const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
 
 export interface LocationStatusToggleProps {
   location: Location
@@ -21,6 +24,8 @@ export interface LocationStatusToggleProps {
 export function LocationStatusToggle({ location }: LocationStatusToggleProps) {
   const [confirming, setConfirming] = useState(false)
   const mutation = useUpdateBrandLocationStatus()
+  const { has } = usePermissions()
+  const canEdit = has(PERMISSIONS.LOCATION_EDIT)
 
   const isActive = location.status === 'active'
   const nextStatus: LocationStatus = isActive ? 'inactive' : 'active'
@@ -54,7 +59,8 @@ export function LocationStatusToggle({ location }: LocationStatusToggleProps) {
             ? 'text-amber-600 hover:underline text-sm'
             : 'text-green-600 hover:underline text-sm'
         }
-        disabled={mutation.isPending}
+        disabled={mutation.isPending || !canEdit}
+        title={canEdit ? undefined : PERMISSION_DENIED_TOOLTIP}
         onClick={() => setConfirming(true)}
         data-testid={`location-status-toggle-${location.id}`}
       >

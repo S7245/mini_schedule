@@ -14,6 +14,9 @@ import type {
 } from '@mini-schedule/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PERMISSIONS, usePermissions } from '@/lib/permissions'
+
+const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
 import {
   Select,
   SelectContent,
@@ -61,6 +64,8 @@ export function StaffRoleAssignmentEditor({
   const rolesQuery = useBrandRoles(editing)
   const locationsQuery = useBrandLocations(1, 100, 'active')
   const mutation = useReplaceStaffRoleAssignments()
+  const { has } = usePermissions()
+  const canAssignRole = has(PERMISSIONS.STAFF_ASSIGN_ROLE)
 
   // When the staff prop updates externally (after a successful PUT, after a
   // delete, etc.), re-hydrate the editor unless the user is mid-edit.
@@ -180,6 +185,8 @@ export function StaffRoleAssignmentEditor({
             variant="ghost"
             size="sm"
             onClick={() => setEditing(true)}
+            disabled={!canAssignRole}
+            title={canAssignRole ? undefined : PERMISSION_DENIED_TOOLTIP}
             data-testid="staff-role-edit"
           >
             编辑

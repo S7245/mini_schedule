@@ -6,6 +6,9 @@ import { useUpdateBrandStaffStatus } from '@mini-schedule/api/staff'
 import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
 import type { StaffListItem, StaffStatus } from '@mini-schedule/types'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { PERMISSIONS, usePermissions } from '@/lib/permissions'
+
+const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
 
 export interface StaffStatusToggleProps {
   /**
@@ -29,6 +32,8 @@ export interface StaffStatusToggleProps {
 export function StaffStatusToggle({ staff, className }: StaffStatusToggleProps) {
   const [confirming, setConfirming] = useState(false)
   const mutation = useUpdateBrandStaffStatus()
+  const { has } = usePermissions()
+  const canEdit = has(PERMISSIONS.STAFF_EDIT)
 
   const isActive = staff.status === 'active'
   const nextStatus: StaffStatus = isActive ? 'inactive' : 'active'
@@ -66,8 +71,14 @@ export function StaffStatusToggle({ staff, className }: StaffStatusToggleProps) 
             ? 'text-amber-600 hover:underline text-sm disabled:opacity-50 disabled:no-underline'
             : 'text-green-600 hover:underline text-sm disabled:opacity-50 disabled:no-underline')
         }
-        disabled={mutation.isPending || ownerLocked}
-        title={ownerLocked ? '品牌负责人不可停用' : undefined}
+        disabled={mutation.isPending || ownerLocked || !canEdit}
+        title={
+          ownerLocked
+            ? '品牌负责人不可停用'
+            : !canEdit
+              ? PERMISSION_DENIED_TOOLTIP
+              : undefined
+        }
         onClick={() => setConfirming(true)}
         data-testid={`staff-status-toggle-${staff.id}`}
       >

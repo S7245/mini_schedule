@@ -14,6 +14,9 @@ import { StaffRoleAssignmentEditor } from '@/components/staff/staff-role-assignm
 import { StaffLocationAssignmentEditor } from '@/components/staff/staff-location-assignment-editor'
 import { InstructorProfileSection } from '@/components/staff/instructor-profile-section'
 import { StaffStatusToggle } from '@/components/staff/staff-status-toggle'
+import { PERMISSIONS, usePermissions } from '@/lib/permissions'
+
+const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
 
 export default function StaffDetailPage() {
   const params = useParams()
@@ -25,6 +28,8 @@ export default function StaffDetailPage() {
   const staffQuery = useBrandStaff(idValid ? staffId : null)
   const deleteMutation = useDeleteBrandStaff()
   const [pendingDelete, setPendingDelete] = useState(false)
+  const { has } = usePermissions()
+  const canDelete = has(PERMISSIONS.STAFF_DELETE)
 
   if (!idValid) {
     return (
@@ -116,8 +121,14 @@ export default function StaffDetailPage() {
           <Button
             variant="destructive"
             size="sm"
-            disabled={ownerLocked}
-            title={ownerLocked ? '品牌负责人不可删除' : undefined}
+            disabled={ownerLocked || !canDelete}
+            title={
+              ownerLocked
+                ? '品牌负责人不可删除'
+                : !canDelete
+                  ? PERMISSION_DENIED_TOOLTIP
+                  : undefined
+            }
             onClick={() => setPendingDelete(true)}
             data-testid="staff-delete-button"
           >

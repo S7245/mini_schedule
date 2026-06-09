@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/table'
 import { StaffStatusToggle } from '@/components/staff/staff-status-toggle'
 import { StaffCreateDialog } from '@/components/staff/staff-create-dialog'
+import { PERMISSIONS, usePermissions } from '@/lib/permissions'
+
+const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
 
 const STATUS_LABELS: Record<string, string> = {
   active: '启用',
@@ -75,6 +78,8 @@ export default function StaffListPage() {
   const [statusFilter, setStatusFilter] = useState<StaffStatusFilter>('all')
   const [q, setQ] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const { has } = usePermissions()
+  const canCreate = has(PERMISSIONS.STAFF_CREATE)
 
   // q is local filter — backend supports `q` param; we pass through with a tiny
   // debounce-less approach because the dataset is small (max 200 in this batch).
@@ -104,6 +109,8 @@ export default function StaffListPage() {
         </div>
         <Button
           onClick={() => setDialogOpen(true)}
+          disabled={!canCreate}
+          title={canCreate ? undefined : PERMISSION_DENIED_TOOLTIP}
           data-testid="staff-create-button"
         >
           <Plus className="mr-1 h-4 w-4" />
