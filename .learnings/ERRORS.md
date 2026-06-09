@@ -45,3 +45,24 @@
 ### `/locations` 路径是步骤 2 而不是日常管理页
 
 - `apps/brand/app/(protected)/onboarding/locations/page.tsx` 是 onboarding step 内的 CRUD，**它不是"日常门店管理页"**。Batch 5 若加 `apps/brand/app/(protected)/locations/page.tsx`（独立菜单项），注意两者要共用 `LocationFormDialog / LocationStatusToggle / ConfirmDialog` 组件，但不能直接 import 步骤页 —— 把这三个组件的位置（`components/locations/`、`components/common/`）已经摆对了，复用就是 import 三个文件 + 自己写一个 `ResourceListPage` 顶层。
+
+## 2026-06-06 Batch 5 验收期坑
+
+### 后端 `json:",omitempty"` 把数组字段整个吞掉，前端 TS 类型撒谎
+
+`/staff/[id]` owner 进入直接 white-screen：`staff.location_assignments.map(...)` 报 `Cannot read properties of undefined`。根因是后端 DTO 字段 tag 写了 `json:"location_assignments,omitempty"`，owner 的 assignments 是空切片时序列化整段消失。前端 TS 类型 `Staff` 里写的是 `location_assignments: LocationAssignment[]`，编译期看不出来，运行时只在 owner 这种边角 case 触发。
+
+**规则**：
+- 前端类型涉及数组时一律 `?? []` 兜底，**不管后端"应该"返什么**——后端可能在任何 release 加 omitempty。`rowsFromStaff` / `useFieldArray` 初始化 / `.map()` 前都加。
+- 后端 review checklist：DTO 数组字段**禁用** `omitempty`，统一返 `[]`（已在 d0dd639+1 patch），列表类型不该有"该字段不存在"和"该字段是空数组"两种语义。
+- 当前 a3af71a 已在 `staff-role-assignment-editor.tsx` / `staff-location-assignment-editor.tsx` 加防御；Batch 6 新接口数组字段一并加。
+
+### Gin handler 绑 string 但前端发 `[]string`，INVALID_REQUEST 无根因
+
+教练档案启用时 `specialties`/`certificates` 前端按 `string[]` 发，后端 handler 的 BindJSON struct 写的是 `string`，Gin 解码失败统一吐 `INVALID_REQUEST: 请求参数错误`，看不出是哪个字段、什么类型不对。前端 zod 也通过了（自己跟自己对齐）。
+
+**规则**：
+- 前后端类型对齐必须放 contract review checklist：联调首个端到端跑通前，**先用 curl 灌一个真实 payload 验证后端期望**，确认 `Content-Type: application/json` 下后端真实解出来的字段类型。
+- INVALID_REQUEST 排查口诀：前端 zod 通过 + 后端报 INVALID_REQUEST = 八成是 handler bind 结构体字段类型与前端发送类型不匹配（数组 vs 字符串、number vs string、嵌套对象 vs 扁平字段）。
+- Batch 6 起，packages/types 与后端 DTO 同步在 PR description 列对照表，单边改字段类型必须打 break 标签。
+

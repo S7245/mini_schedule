@@ -84,3 +84,28 @@ const [pendingDelete, setPendingDelete] = useState<T | null>(null)
 - `apps/brand/app/(protected)/locations/page.tsx`（独立菜单门店管理页）目前没建，Batch 5 顺手补一下，沿用上面"独立菜单项"结构
 - onboarding 上线某 step 时同步从 `step-placeholder.tsx` 的 `STEP_HINTS` map 删掉对应键，避免误用
 - QUOTA_EXCEEDED 文案目前写死"请联系平台升级套餐"，后端实际返回了 `{current, max}` —— 可以改成 `已用 ${current}/${max}，[升级套餐]` inline 链接，做了能直接复用到 staff/course 配额错误上
+
+## 2026-06-06 Batch 6 待办（Batch 5 验收期沉淀）
+
+### 抽 ResourceStatusToggle 泛型
+
+- `LocationStatusToggle` + `StaffStatusToggle` 现在结构 95% 相同（hook 名 + 文案 + 颜色 token 不同），第三个 toggle（course / instructor / class_session）出现时就开抽。
+- 设计：`<ResourceStatusToggle<T, S>>{ resource, statuses: [{value,label,color,confirmDesc}], mutation, getCurrentStatus }`；hook 由外部注入，组件只管 UI + Confirm。
+- 位置：`apps/brand/components/common/resource-status-toggle.tsx`，与 ConfirmDialog 同级。
+
+### StaffCreateDialog primary location invariant 客户端化
+
+- 当前 zod refine 只校验 "primary 数量 <= 1"，没校验"添加 location 时必须有恰好一个 primary"；后端校验，但 UI 体验差（提交才报错）。
+- 加：`addRow` / `removeRow` 时自动维护 invariant —— 第一行强制 `is_primary=true`；删除 primary 时把剩下第一行升级 primary（location editor 已有此逻辑，Dialog 没复制过来）。
+- 顺手在 RHF 层面把 `useFieldArray` row 的 `is_primary` toggle 改成 radio group 语义（点一行其他自动取消）。
+
+### scope-aware location 校验提早到 Dialog
+
+- StaffCreateDialog 里"data_scope=assigned_locations 但 location_id=null"目前要等 submit 才报错；StaffRoleAssignmentEditor 详情页里已经做了 inline 提示。
+- 把 RoleAssignmentEditor 里的 `validateRow` 抽公共，Dialog 内的 role/location 配置同一份校验，统一提示文案。
+
+### Chip 输入控件抽出
+
+- 当前 InstructorProfileSection 用 csv textarea 是 v1 妥协方案。当 Batch 6 出现 course tags / certificates v2 / brand keywords 等第 2 个数组短文本字段时，**才**开抽 `<ChipInput value={string[]} onChange separators={[',','；',Enter]} />`。
+- 位置：`apps/brand/components/common/chip-input.tsx`；InstructorProfileSection 与 course tags 同步迁移。
+- 不要提前抽：单一调用方场景 textarea 体验够、维护成本低。

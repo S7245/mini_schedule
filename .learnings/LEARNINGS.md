@@ -129,3 +129,42 @@ baseline 推荐 `@mini-schedule/admin-system` 的 `ResourceListPage` + `DataTabl
 
 Batch 5 判断标准：**onboarding step 内的列表用裸 Table；`(protected)/locations/page.tsx` 这种"长期管理页"才上 ResourceListPage**。两者可以共用 `LocationFormDialog`、`LocationStatusToggle`，但顶层 page 结构不同。
 
+## 2026-06-06 Batch 5 staff/instructor patterns
+
+落地 staff 列表 / 详情 / 角色 / 门店任职 / 教练档案后回看 Batch 4 复用清单的实际兑现。
+
+### 1. "复用 LocationFormDialog 模板"实际是抄结构、不是 import
+
+`StaffCreateDialog` 516 行 vs `LocationFormDialog` 206 行——结构（顶部 zod → 双 mutation → `mapApiError` → QUOTA 同时 toast+inline → `useEffect([open,initial]) reset`）完全沿用，但**没有任何共享代码**。原因：staff 业务字段（`role_codes` 多选 + `location_assignments` 多行 `useFieldArray` + `is_primary` 单选 invariant + `initial_password` 校验）和 location 字段集合完全不重叠，强抽公共 Dialog 反而把 zod schema 和 RHF 类型搞复杂。Batch 6 的 course / entitlement Dialog 继续抄结构，不要等到第 4 个相同模板出现再考虑泛型抽象（rule of three+，4 次才开抽）。
+
+### 2. WizardShell + StepPlaceholder 真复用、零复制
+
+`/onboarding/staff/page.tsx` 直接 `import { WizardShell, ONBOARDING_STEP_ROUTES }`，并**直接 import** `/staff` 列表用的 `StaffCreateDialog / StaffStatusToggle / ConfirmDialog` 三件套，没有抄一份"onboarding 专用版"。两层 page（onboarding step 内 vs 独立菜单 `/staff`）只在顶层结构、`stepDone` gate、`下一步` 按钮上有差异。配合上线某 step 时**同步从 `VALID_DYNAMIC_KEYS` 删除 `staff` 键 + 从 `STEP_HINTS` 删 staff 项**，避免动态路由把人导回 placeholder。
+
+### 3. PUT 全量替换的客户端 state 三段式
+
+`StaffRoleAssignmentEditor` / `StaffLocationAssignmentEditor` 都用同一套：
+1. **`rowsFromStaff(staff)` 纯函数**把后端 DTO 映成本地 RowState（带 `uid` 用作 React key，避开后端 id 在新增行时为空的问题）
+2. **`useState(() => rowsFromStaff(staff))` 初始化** + **`useEffect([staff, editing])` 同步 prop**——但只在 `!editing` 时同步
+3. **`setRows` 本地编辑**，保存成功后 mutation 触发 `invalidateQueries` 让父 query 重拉，再走 useEffect 回流
+
+这是"服务端为 SoT + 不打断用户编辑"的最小实现：编辑中外部 invalidate（隔壁卡片保存触发）不会把当前编辑器里改了一半的内容冲掉。Batch 6 任何 PUT 全量替换的 list editor（如 staff 多角色批量、course 多教练绑定）照抄。
+
+### 4. CSV 单字段 vs Chip 输入：v1 选 CSV 的取舍
+
+`InstructorProfileSection` 的 specialties / certificates 后端是 `[]string`，前端用 `<Textarea>` + `splitCSV` / `joinCSV`（分隔符兼容 `,，;；`，展示用 `、`）。**没上 chip 输入组件**。
+
+取舍：chip 输入需要键盘事件（Enter/Backspace/逗号触发分裂）+ 焦点态 + 拖拽排序，至少 200 行自研或装 react-tag-input。v1 用户只是想"录入几个标签"，textarea 体验够用、可全选粘贴。**Batch 6 出现第二个数组短文本字段（如 course tags）时再抽 `ChipInput`**，目前不开。
+
+### 5. 编辑中 `editing` flag 锁住外部 hydrate
+
+`if (!editing) setRows(rowsFromStaff(staff))`——这一行是"服务端为 SoT" pattern 不背刺用户的关键。如果省掉 `!editing` 守卫，隔壁 BasicInfoCard 一保存就 invalidate 父 staff query，editing 中的本卡片 rows 会被瞬间重置。Batch 6 任何"同页多编辑器"页面都要复用：本地 `editing` boolean + `useEffect` 里 gate 住同步。
+
+### 6. owner 角色编辑器隐藏 + OWNER_PROTECTED 兜底双层防
+
+`StaffRoleAssignmentEditor` 在 `staff.is_owner` 时**直接不渲染编辑按钮**（B3 修复），同时 catch 块里仍处理 `OWNER_PROTECTED` 错误码作为 race 防御（用户在 staff 数据回流前点了编辑）。Batch 6 任何"按 flag 隐藏入口 + 后端硬校验"的场景都按此双层来——UI 层不能依赖后端，后端不能依赖 UI 层。
+
+### 7. mapApiError 中 setQuota(null) 在非 quota 分支也要清
+
+B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota({current,max})`，结果用户撞了 3/3 quota 后改手机号重试撞 `STAFF_PHONE_DUPLICATED`，旧的 quota 计数仍残留在 dialog 里。Rule：**所有携带结构化 data 的错误状态（quota / suggestion / next-step link 等）在每个非自身分支都要显式 `setX(null)`**，不要靠 mount 时一次性 reset。
+
