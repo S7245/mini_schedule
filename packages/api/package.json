@@ -16,7 +16,8 @@
     "./locations": "./src/locations.ts",
     "./staff": "./src/staff.ts",
     "./roles": "./src/roles.ts",
-    "./instructor": "./src/instructor.ts"
+    "./instructor": "./src/instructor.ts",
+    "./me": "./src/me.ts"
   },
   "scripts": {
     "generate": "openapi-typescript ../../backend/docs/swagger.json -o ./generated/api.d.ts",

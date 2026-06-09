@@ -1,27 +1,48 @@
 'use client'
 
-import type { ReactNode } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { Inbox } from 'lucide-react'
+import { Inbox, X } from 'lucide-react'
 import { useAuthStore } from '@mini-schedule/api/auth'
 import { getBackofficePageLabel } from '@mini-schedule/admin-system'
 import { ProtectedAppLayout } from '@mini-schedule/admin-system/shell/protected-app-layout'
 import { Button } from '@/components/ui/button'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { brandNavItems } from '@/config/nav'
 import { brandMessageSummary } from '@/lib/message-center-data'
+import { PermissionsProvider } from '@/lib/permissions'
 
 interface ProtectedLayoutProps {
   children: ReactNode
 }
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  return (
+    <PermissionsProvider>
+      <ProtectedLayoutInner>{children}</ProtectedLayoutInner>
+    </PermissionsProvider>
+  )
+}
+
+function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const [supportCardOpen, setSupportCardOpen] = useState(true)
+  const [sidebarTopInset, setSidebarTopInset] = useState(0)
   const { isAuthenticated, user, logout } = useAuthStore()
+  const brandNavGroups = [
+    { label: '控制台', items: brandNavItems.slice(0, 1) },
+    { label: '品牌运营', items: brandNavItems.slice(1) },
+  ]
 
   useEffect(() => {
+    if (window.electronAPI) {
+      window.electronAPI.getPlatform().then((platform) => {
+        if (platform === 'darwin') setSidebarTopInset(28)
+      })
+    }
+
     if (!isAuthenticated) {
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
       return
@@ -41,15 +62,33 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     <ProtectedAppLayout
       appName="品牌管理后台"
       navItems={brandNavItems}
+      navGroups={brandNavGroups}
       pathname={pathname}
-      sidebarStyle="floating"
+      sidebarStyle="inset"
+      sidebarTopInset={sidebarTopInset}
       sidebarFooter={
-        <div className="rounded-xl border border-sidebar-border bg-background/80 p-3 text-sidebar-foreground shadow-sm">
-          <p className="text-sm font-semibold">需要更多帮助？</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            查看消息中心，或联系平台支持处理运营问题。
-          </p>
-        </div>
+        supportCardOpen ? (
+          <Card className="relative overflow-hidden border-sidebar-border bg-background shadow-none">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="关闭运营协助提示"
+              className="absolute right-2 top-2 size-6 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={() => setSupportCardOpen(false)}
+            >
+              <X className="size-3.5" />
+            </Button>
+            <CardHeader className="space-y-1 p-3 pr-9">
+              <CardTitle className="text-sm font-semibold leading-5">
+                需要运营协助？
+              </CardTitle>
+              <CardDescription className="text-sm leading-5">
+                查看消息中心，或联系平台支持处理运营问题。
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : null
       }
       topbarTitle={getBackofficePageLabel(
         pathname,
