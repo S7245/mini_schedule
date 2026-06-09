@@ -12,7 +12,6 @@ export interface StepPlaceholderProps {
 }
 
 const STEP_HINTS: Partial<Record<OnboardingStepKey, string>> = {
-  staff: '员工与教练管理即将上线，可先跳过此步，后续在「员工」页面补充。',
   course_category: '课程分类用于组织课程模板，将在后续版本支持。',
   course_template: '课程模板用于排课，将在后续版本支持。',
   entitlement_template: '学员权益模板用于售卖会员卡 / 课包，将在后续版本支持。',

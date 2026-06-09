@@ -21,7 +21,7 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { Button } from '@/components/ui/button'
 
 const VALID_DYNAMIC_KEYS: OnboardingStepKey[] = [
-  'staff',
+  // staff has a dedicated /onboarding/staff route (Batch 5)
   'course_category',
   'course_template',
   'entitlement_template',

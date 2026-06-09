@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Contact,
   Dumbbell,
   Inbox,
   LayoutDashboard,
@@ -13,6 +14,11 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/dashboard',
     label: '概览',
     icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    href: '/staff',
+    label: '员工管理',
+    icon: <Contact className="h-4 w-4" />,
   },
   {
     href: '/users',
