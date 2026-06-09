@@ -431,3 +431,165 @@ export interface OperationLog {
   metadata?: unknown
   created_at: string
 }
+
+// ─── Staff / Role / Instructor (Batch 5) ─────────────────
+
+export type StaffStatus = 'active' | 'inactive'
+export type StaffStatusFilter = StaffStatus | 'all'
+
+export type RoleScopeType = 'brand' | 'location'
+export type DataScope = 'all_brand' | 'role_default' | 'assigned_locations' | 'own_records'
+export type LocationAssignmentType = 'member' | 'manager' | 'instructor' | 'assistant'
+
+/**
+ * One entry of a Staff's role assignments. `location_id` is REQUIRED when the
+ * role's scope_type is 'location', and MUST be null for brand-scoped roles.
+ */
+export interface RoleAssignment {
+  id?: number
+  role_id: number
+  role_code: string
+  role_name: string
+  role_scope_type: RoleScopeType
+  location_id: number | null
+  location_name?: string | null
+  data_scope: DataScope
+}
+
+export interface CreateRoleAssignmentInput {
+  role_code: string
+  location_id?: number | null
+  data_scope: DataScope
+}
+
+export interface LocationAssignment {
+  id?: number
+  location_id: number
+  location_name?: string | null
+  assignment_type: LocationAssignmentType
+  is_primary: boolean
+}
+
+export interface CreateLocationAssignmentInput {
+  location_id: number
+  assignment_type: LocationAssignmentType
+  is_primary: boolean
+}
+
+export type InstructorStatus = 'active' | 'inactive'
+
+export interface InstructorProfile {
+  id: number
+  brand_id: number
+  brand_user_id: number
+  display_name: string
+  avatar_url: string | null
+  bio: string | null
+  specialties: string[] | null
+  certificates: string[] | null
+  is_visible_to_learners: boolean
+  is_schedulable: boolean
+  status: InstructorStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface UpsertInstructorProfileInput {
+  display_name: string
+  avatar_url?: string | null
+  bio?: string | null
+  specialties?: string[] | null
+  certificates?: string[] | null
+  is_visible_to_learners: boolean
+  is_schedulable: boolean
+  status: InstructorStatus
+}
+
+export interface Staff {
+  id: number
+  brand_id: number
+  phone: string
+  name: string
+  status: StaffStatus
+  is_owner: boolean
+  role_assignments: RoleAssignment[]
+  location_assignments: LocationAssignment[]
+  instructor_profile?: InstructorProfile | null
+  has_instructor: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface StaffListItem {
+  id: number
+  brand_id: number
+  phone: string
+  name: string
+  status: StaffStatus
+  is_owner: boolean
+  role_assignments: RoleAssignment[]
+  location_assignments: LocationAssignment[]
+  has_instructor: boolean
+  instructor_status?: InstructorStatus | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateStaffInput {
+  phone: string
+  name: string
+  initial_password: string
+  role_codes?: string[]
+  location_assignments?: CreateLocationAssignmentInput[]
+}
+
+export interface UpdateStaffInput {
+  name?: string
+}
+
+export interface UpdateStaffStatusInput {
+  status: StaffStatus
+}
+
+export interface ReplaceRoleAssignmentsInput {
+  assignments: CreateRoleAssignmentInput[]
+}
+
+export interface ReplaceLocationAssignmentsInput {
+  assignments: CreateLocationAssignmentInput[]
+}
+
+export interface StaffListQuery {
+  page?: number
+  page_size?: number
+  status?: StaffStatusFilter
+  with_instructor?: boolean
+  q?: string
+}
+
+// ─── Brand Roles (read-only this batch) ──────────────────
+
+export type RoleStatus = 'active' | 'inactive'
+
+export interface BrandRolePermission {
+  id: number
+  code: string
+  domain: string
+  action: string
+  name: string
+  description?: string | null
+}
+
+export interface BrandRole {
+  id: number
+  brand_id: number
+  code: string
+  name: string
+  description: string | null
+  scope_type: RoleScopeType
+  is_system: boolean
+  status: RoleStatus
+  permissions: BrandRolePermission[]
+  created_at: string
+  updated_at: string
+}

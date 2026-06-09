@@ -13,7 +13,10 @@
     "./public": "./src/public.ts",
     "./onboarding": "./src/onboarding.ts",
     "./brand-profile": "./src/brand-profile.ts",
-    "./locations": "./src/locations.ts"
+    "./locations": "./src/locations.ts",
+    "./staff": "./src/staff.ts",
+    "./roles": "./src/roles.ts",
+    "./instructor": "./src/instructor.ts"
   },
   "scripts": {
     "generate": "openapi-typescript ../../backend/docs/swagger.json -o ./generated/api.d.ts",

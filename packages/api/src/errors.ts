@@ -30,6 +30,14 @@ export const ErrorCodes = {
   SUBSCRIPTION_RESTRICTED: 'SUBSCRIPTION_RESTRICTED',
   INVALID_PARAM: 'INVALID_PARAM',
 
+  // Staff (Batch 5)
+  STAFF_NOT_FOUND: 'STAFF_NOT_FOUND',
+  STAFF_PHONE_DUPLICATED: 'STAFF_PHONE_DUPLICATED',
+  OWNER_PROTECTED: 'OWNER_PROTECTED',
+  ROLE_NOT_FOUND: 'ROLE_NOT_FOUND',
+  LOCATION_ASSIGNMENT_INVALID: 'LOCATION_ASSIGNMENT_INVALID',
+  INSTRUCTOR_PROFILE_NOT_FOUND: 'INSTRUCTOR_PROFILE_NOT_FOUND',
+
   // User
   USER_NOT_FOUND: 'USER_NOT_FOUND',
   USER_DUPLICATE_PHONE: 'USER_DUPLICATE_PHONE',
@@ -66,15 +74,50 @@ export interface ApiError {
 
 /**
  * Custom API error class
+ *
+ * `data` carries the optional structured payload backend may return alongside an
+ * error code — e.g. QUOTA_EXCEEDED includes `{current, max}` so the frontend can
+ * render quota counters inline rather than a static "请升级套餐" message.
  */
 export class ApiErrorClass extends Error {
   code: string
   httpStatus: number
+  data: unknown
 
-  constructor(code: string, message: string, httpStatus: number) {
+  constructor(code: string, message: string, httpStatus: number, data: unknown = null) {
     super(message)
     this.name = 'ApiError'
     this.code = code
     this.httpStatus = httpStatus
+    this.data = data
   }
+}
+
+/**
+ * Shape returned by backend for QUOTA_EXCEEDED errors (Batch 4+).
+ */
+export interface QuotaExceededDetails {
+  current: number
+  max: number
+}
+
+/**
+ * Narrow helper: pulls `{current, max}` off an ApiError when its code is QUOTA_EXCEEDED.
+ * Returns null if shape doesn't match — keeps render code safe even if backend changes.
+ */
+export function getQuotaDetails(err: unknown): QuotaExceededDetails | null {
+  if (!(err instanceof ApiErrorClass)) return null
+  if (err.code !== ErrorCodes.QUOTA_EXCEEDED) return null
+  const data = err.data
+  if (
+    data &&
+    typeof data === 'object' &&
+    'current' in data &&
+    'max' in data &&
+    typeof (data as { current: unknown }).current === 'number' &&
+    typeof (data as { max: unknown }).max === 'number'
+  ) {
+    return data as QuotaExceededDetails
+  }
+  return null
 }

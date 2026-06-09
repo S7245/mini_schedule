@@ -23,6 +23,38 @@ export interface AuthUser {
   display_name: string
 }
 
+const routeGuardCookieNames = ['brand_access_token', 'app_access_token'] as const
+const routeGuardCookieMaxAge = 60 * 60 * 24
+
+function cookieOptions(maxAge: number): string {
+  const secure =
+    typeof window !== 'undefined' && window.location.protocol === 'https:'
+      ? '; Secure'
+      : ''
+
+  return `Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`
+}
+
+function setRouteGuardCookie(user: AuthUser, accessToken: string): void {
+  if (typeof document === 'undefined' || user.user_type === 'admin') {
+    return
+  }
+
+  document.cookie = `${user.user_type}_access_token=${encodeURIComponent(
+    accessToken,
+  )}; ${cookieOptions(routeGuardCookieMaxAge)}`
+}
+
+function clearRouteGuardCookies(): void {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  for (const name of routeGuardCookieNames) {
+    document.cookie = `${name}=; ${cookieOptions(0)}`
+  }
+}
+
 // ─── Store ───────────────────────────────────────────────
 
 interface AuthState {
@@ -44,26 +76,36 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: (tokens, user) =>
+      login: (tokens, user) => {
+        setRouteGuardCookie(user, tokens.access_token)
         set({
           accessToken: tokens.access_token,
           refreshToken: tokens.refresh_token,
           user,
           isAuthenticated: true,
-        }),
+        })
+      },
 
-      logout: () =>
+      logout: () => {
+        clearRouteGuardCookies()
         set({
           accessToken: null,
           refreshToken: null,
           user: null,
           isAuthenticated: false,
-        }),
+        })
+      },
 
       updateToken: (tokens) =>
-        set({
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
+        set((state) => {
+          if (state.user) {
+            setRouteGuardCookie(state.user, tokens.access_token)
+          }
+
+          return {
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token,
+          }
         }),
     }),
     {

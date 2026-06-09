@@ -92,7 +92,7 @@ export function WizardShell({
   const currentIndex = ONBOARDING_STEP_KEYS.indexOf(currentStepKey)
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-slate-50 px-4 py-10">
+    <div className="flex min-h-full flex-col items-center bg-slate-50 px-4 py-10">
       <div className="mb-6 text-center">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           品牌开通向导

@@ -8,7 +8,8 @@ interface RequestInitExtended extends RequestInit {
 /**
  * Unified API client
  *
- * - Reads NEXT_PUBLIC_API_URL from env
+ * - Uses same-origin Next rewrites for browser requests that have app proxies
+ * - Reads NEXT_PUBLIC_API_URL from env for direct server-side or non-proxied requests
  * - Parses {code, message, data} responses
  * - Auto-shows toast on errors unless {silent: true}
  * - Attaches JWT token from localStorage if available
@@ -36,8 +37,12 @@ function shouldUseCookieAuth(path: string): boolean {
   return path.startsWith('/api/v1/admin/')
 }
 
+function shouldUseSameOriginProxy(path: string): boolean {
+  return path.startsWith('/api/v1/admin/') || path.startsWith('/api/v1/brand/') || path.startsWith('/api/v1/public/')
+}
+
 function getRequestUrl(path: string): string {
-  if (typeof window !== 'undefined' && shouldUseCookieAuth(path)) {
+  if (typeof window !== 'undefined' && shouldUseSameOriginProxy(path)) {
     return path
   }
 
@@ -72,7 +77,12 @@ export async function api<T>(
 
   // Backend success responses currently use code === "OK".
   if (json.code !== 'OK') {
-    const apiError = new ApiErrorClass(json.code ?? 'UNKNOWN_ERROR', json.message, response.status)
+    const apiError = new ApiErrorClass(
+      json.code ?? 'UNKNOWN_ERROR',
+      json.message,
+      response.status,
+      json.data,
+    )
 
     if (!silent) {
       toast.error(json.message)
