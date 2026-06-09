@@ -218,11 +218,15 @@ export function StaffCreateDialog({
           return
         }
         if (err.code === ErrorCodes.SUBSCRIPTION_RESTRICTED) {
+          // review B11：非 quota 错误必须清掉 quota counter，否则旧的 (3/3) 会和新错误并列显示
+          setQuota(null)
           toast.error(msg)
           setApiError(msg)
           return
         }
       }
+      // review B11：所有其他错误（phone 重复 / role 不存在 / 后端 500 等）同样清 quota state
+      setQuota(null)
       setApiError(msg)
     }
   }

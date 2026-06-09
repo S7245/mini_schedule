@@ -155,6 +155,11 @@ export function StaffRoleAssignmentEditor({
           case ErrorCodes.INVALID_PARAM:
             toast.error(e.message || '角色配置不合法')
             return
+          case ErrorCodes.OWNER_PROTECTED:
+            // review B3：服务端拦下 owner 的角色变更（service.ReplaceRoleAssignments 已加守卫）
+            toast.error('品牌负责人的角色由系统维护，不可手动修改')
+            setEditing(false)
+            return
           default:
             toast.error(e.message || '保存失败')
             return
@@ -168,7 +173,8 @@ export function StaffRoleAssignmentEditor({
     <Card data-testid="staff-role-editor">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">角色任职</CardTitle>
-        {!editing ? (
+        {/* review B3：owner 的角色由系统维护，UI 不暴露编辑入口（服务端会以 OWNER_PROTECTED 兜底） */}
+        {!editing && !staff.is_owner ? (
           <Button
             variant="ghost"
             size="sm"
