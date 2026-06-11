@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useBrandStaff, useDeleteBrandStaff } from '@mini-schedule/api/staff'
 import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
 import { Button } from '@/components/ui/button'
+import { Hint } from '@/components/ui/hint'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { StaffBasicInfoCard } from '@/components/staff/staff-basic-info-card'
 import { StaffRoleAssignmentEditor } from '@/components/staff/staff-role-assignment-editor'
@@ -118,22 +119,25 @@ export default function StaffDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <StaffStatusToggle staff={staff} />
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={ownerLocked || !canDelete}
-            title={
+          <Hint
+            content={
               ownerLocked
                 ? '品牌负责人不可删除'
                 : !canDelete
                   ? PERMISSION_DENIED_TOOLTIP
                   : undefined
             }
-            onClick={() => setPendingDelete(true)}
-            data-testid="staff-delete-button"
           >
-            删除员工
-          </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={ownerLocked || !canDelete}
+              onClick={() => setPendingDelete(true)}
+              data-testid="staff-delete-button"
+            >
+              删除员工
+            </Button>
+          </Hint>
         </div>
       </div>
 

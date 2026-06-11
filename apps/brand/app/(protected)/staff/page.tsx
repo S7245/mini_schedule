@@ -10,6 +10,7 @@ import type {
   StaffStatusFilter,
 } from '@mini-schedule/types'
 import { Button } from '@/components/ui/button'
+import { Hint } from '@/components/ui/hint'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -107,15 +108,16 @@ export default function StaffListPage() {
             管理品牌员工、角色与门店任职。品牌负责人由系统自动分配，无法手动新增。
           </p>
         </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          disabled={!canCreate}
-          title={canCreate ? undefined : PERMISSION_DENIED_TOOLTIP}
-          data-testid="staff-create-button"
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          新增员工
-        </Button>
+        <Hint content={canCreate ? undefined : PERMISSION_DENIED_TOOLTIP}>
+          <Button
+            onClick={() => setDialogOpen(true)}
+            disabled={!canCreate}
+            data-testid="staff-create-button"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            新增员工
+          </Button>
+        </Hint>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

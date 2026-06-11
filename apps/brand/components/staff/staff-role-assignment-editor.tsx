@@ -14,6 +14,7 @@ import type {
 } from '@mini-schedule/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Hint } from '@/components/ui/hint'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 
 const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
@@ -181,16 +182,17 @@ export function StaffRoleAssignmentEditor({
         <CardTitle className="text-base">角色任职</CardTitle>
         {/* review B3：owner 的角色由系统维护，UI 不暴露编辑入口（服务端会以 OWNER_PROTECTED 兜底） */}
         {!editing && !staff.is_owner ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setEditing(true)}
-            disabled={!canAssignRole}
-            title={canAssignRole ? undefined : PERMISSION_DENIED_TOOLTIP}
-            data-testid="staff-role-edit"
-          >
-            编辑
-          </Button>
+          <Hint content={canAssignRole ? undefined : PERMISSION_DENIED_TOOLTIP}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditing(true)}
+              disabled={!canAssignRole}
+              data-testid="staff-role-edit"
+            >
+              编辑
+            </Button>
+          </Hint>
         ) : null}
       </CardHeader>
       <CardContent className="space-y-3">

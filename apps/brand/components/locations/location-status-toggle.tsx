@@ -6,6 +6,7 @@ import { useUpdateBrandLocationStatus } from '@mini-schedule/api/locations'
 import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
 import type { Location, LocationStatus } from '@mini-schedule/types'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { Hint } from '@/components/ui/hint'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 
 const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
@@ -52,20 +53,21 @@ export function LocationStatusToggle({ location }: LocationStatusToggleProps) {
 
   return (
     <>
-      <button
-        type="button"
-        className={
-          isActive
-            ? 'text-amber-600 hover:underline text-sm'
-            : 'text-green-600 hover:underline text-sm'
-        }
-        disabled={mutation.isPending || !canEdit}
-        title={canEdit ? undefined : PERMISSION_DENIED_TOOLTIP}
-        onClick={() => setConfirming(true)}
-        data-testid={`location-status-toggle-${location.id}`}
-      >
-        {actionLabel}
-      </button>
+      <Hint content={canEdit ? undefined : PERMISSION_DENIED_TOOLTIP}>
+        <button
+          type="button"
+          className={
+            isActive
+              ? 'text-amber-600 hover:underline text-sm'
+              : 'text-green-600 hover:underline text-sm'
+          }
+          disabled={mutation.isPending || !canEdit}
+          onClick={() => setConfirming(true)}
+          data-testid={`location-status-toggle-${location.id}`}
+        >
+          {actionLabel}
+        </button>
+      </Hint>
 
       <ConfirmDialog
         open={confirming}
