@@ -168,3 +168,44 @@ Batch 5 判断标准：**onboarding step 内的列表用裸 Table；`(protected)
 
 B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota({current,max})`，结果用户撞了 3/3 quota 后改手机号重试撞 `STAFF_PHONE_DUPLICATED`，旧的 quota 计数仍残留在 dialog 里。Rule：**所有携带结构化 data 的错误状态（quota / suggestion / next-step link 等）在每个非自身分支都要显式 `setX(null)`**，不要靠 mount 时一次性 reset。
 
+## 2026-06-11 Batch 6 RBAC enforcement / data_scope 前端消费侧
+
+落地 `/me/permissions` 消费、菜单按权限隐藏、按钮 disabled+tooltip、跨用户缓存清理后的可复用经验。前端只是权限的**消费侧**，SoT 在后端 RBAC（permissions 表 + data_scope）；UI 守卫永远是体验优化，不能当安全边界，后端 403 兜底永远在。
+
+### 1. fail-closed 权限消费是默认姿态（`lib/permissions.tsx`）
+
+`usePermissions().has(code)` 在 **loading / error / 未授权（非 brand 用户）/ 数据未到** 任一情况一律返 `false`：`PermissionsProvider` 的 `useMemo` 里 `if (!data || isLoading || isError || !enabled)` 直接 ship 空 `Set` + `has: () => false`，连无 Provider 的 SSR/测试默认 context 也是 `has: () => false`。
+
+取舍口诀：**宁可少给不可错给**。代价是用户在 perms 还没到时短暂看到 disabled 按钮；反向代价是看到 enabled 按钮点下去吃 403。Batch 7 任何新权限消费点都从 `usePermissions()` 取 `has`，**不要自己读 query.data 判空**（会漏掉 error 分支），也不要给 `has` 兜个"未知时默认 true"。
+
+### 2. 权限码统一走 `PERMISSIONS` 常量，不写裸字符串
+
+`PERMISSIONS = { STAFF_VIEW: 'staff.view', ... } as const` + `PermissionCode` 联合类型。组件里一律 `has(PERMISSIONS.STAFF_CREATE)`，**禁止 `has('staff.create')` 字面量**——和 `errors.ts` 的 `ErrorCodes` 同源思路：码改名只动一处、typo 编译期就挂。后端新增权限码先在这里登记。
+
+### 3. 菜单按权限隐藏 vs 区内操作 disabled —— 两种粒度分工明确
+
+- **整块功能区**（有无 view 权限）：`(protected)/layout.tsx` 的 `NAV_HREF_PERMISSIONS` 把路由前缀映射到 view 权限码，无权限**直接从 sidebar 移除**菜单项（`visibleNavItems.filter`）。map **故意稀疏**——没登记的 href（Batch 6 之前的 users/courses/messages）默认全可见，等各自 batch 定义权限再加。
+- **区内单个操作**（create / edit / delete）：进了页面后用 **按钮 disabled + tooltip**，不从 DOM 摘掉——用户能看到"有这个操作但我没权限"，比凭空消失更可理解。
+- **loading 期乐观显示全菜单**：`if (permsLoading) return true`，否则每次 page nav 侧边栏会闪一下/空出来。这层乐观靠 button-level guard（fail-closed 的 disabled）兜底，短窗口内点进去也是 disabled，不会越权。**菜单隐藏可以乐观，按钮 enable 必须 fail-closed**——两层粒度的乐观/保守方向相反，记牢。
+
+### 4. disabled 控件的 tooltip —— 重磅复用模式（`components/ui/hint.tsx`）
+
+**问题**：disabled 元素不派发指针事件，shadcn `Button` 又自带 `disabled:pointer-events-none`，原生 `title` 和直接挂在 button 上的 Radix tooltip 触发器**永远不弹**。
+
+**解法**：`Hint` 包裹器把 Radix `TooltipTrigger asChild` 挂到一个**非 disabled 的 `<span>`** 上，并在 span 上加 `[&_:disabled]:pointer-events-none` 强制内部 disabled 子元素不吃事件——hover 落到 span 上，tooltip 正常弹。对 shadcn `Button` 和原生 `<button>` link-style 控件都适用。
+
+约定用法（`content` falsy 时不包 wrapper，直出 children，所以三元很顺手）：
+```tsx
+<Hint content={canCreate ? undefined : '权限不足，请联系管理员'}>
+  <Button disabled={!canCreate}>新增员工</Button>
+</Hint>
+```
+比原生 `title` 多了样式 + 可聚焦 + `aria-describedby` 无障碍。Batch 7 任何"按钮因权限/quota/状态被 disable 还要解释原因"的场景一律用 `Hint`，**不要再写 `title=` 或自己包 tooltip**。
+
+### 5. `/me/permissions` query 约定（`packages/api/src/me.ts`）
+
+- `meQueryKeys.permissions() = ['brand-me-permissions']` —— **静态 queryKey，不带 user id**（这点见 ERRORS 的跨用户缓存泄漏条目，新增非 user-keyed query 必读）。
+- `staleTime: 60s` 对齐后端 Redis TTL；`refetchOnWindowFocus: true` 让管理员改了权限后用户切回 tab 60s 内能看到新权限集；`retry: 1` 防瞬断烧权限检查。
+- `fetchMyPermissions(true)` 默认 `silent`——权限拉取失败不弹 toast，交给 `usePermissions` fail-closed 静默降级。Batch 7 类似"基础设施类"query（feature flag / 配置）都按 silent + 上层 fail-closed。
+- 返回体含 `data_scope`（`all_brand` / `assigned_locations[location_ids]` / `none`），`usePermissions().dataScope` 已透出。`none` 是显式 narrow case（无 active 角色），消费侧要 handle，不要假设非 none。data_scope 的列表过滤消费目前框架就位、具体列表页消费按需接。
+

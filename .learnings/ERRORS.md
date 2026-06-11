@@ -66,3 +66,39 @@
 - INVALID_REQUEST 排查口诀：前端 zod 通过 + 后端报 INVALID_REQUEST = 八成是 handler bind 结构体字段类型与前端发送类型不匹配（数组 vs 字符串、number vs string、嵌套对象 vs 扁平字段）。
 - Batch 6 起，packages/types 与后端 DTO 同步在 PR description 列对照表，单边改字段类型必须打 break 标签。
 
+## 2026-06-11 Batch 6 RBAC enforcement 验收期坑
+
+### 🔴 跨用户 React Query 缓存泄漏（commit 69f513c，重磅）
+
+**现象**：用户 A 登出、用户 B 登录后，B 看到的侧边菜单 / 权限按钮 enable 状态仍是 A 的；硬刷新才恢复正常。
+
+**根因**：`/me/permissions` 的 queryKey 是 `['brand-me-permissions']`（见 `packages/api/src/me.ts` `meQueryKeys.permissions()`）——**静态、不带 user id**。而原本：
+- `logout()`（`packages/api/src/auth.ts`）只清 Zustand auth state（token / user）+ 路由守卫 cookie，**没碰 React Query cache**；
+- 登录 `onSuccess` 只 `invalidateQueries(['auth'])` 之类，**没清整个 cache**。
+
+结果 A 的 `['brand-me-permissions']` 缓存条目（含 permissions / data_scope）在 staleTime(60s) 内原封不动被 B 复用，菜单/按钮全是 A 的视角。
+
+**修复**：三端登录 `onSuccess`（`useBrandLogin / useAdminLogin / useAppLogin`）+ 登出处（`(protected)/layout.tsx` 的 `onLogout`）**统统 `queryClient.clear()`**，整库清空而非 invalidate 单 key。在 login onSuccess 清是为了防"A 没显式登出、直接在登录页登 B"的路径也干净。
+
+**规则（会话边界铁律）**：**会话边界（登录成功 / 登出）必须 `queryClient.clear()` 清空整个 query cache，不能只 invalidate 某几个 key。** invalidate 只标记 stale 仍可被读到旧值；clear 才是真正逐出。
+
+**Pending exposure（必查）**：所有**非 user-keyed**（queryKey 不含 user/brand id）的缓存都有同款跨用户泄漏风险——目前已知：`['brand-me-permissions']`、staff 列表、门店列表、以及后续任何 brand-scoped query。
+- 已修：上述四处 `queryClient.clear()` 覆盖了**已存在**的所有 query。
+- **约束**：Batch 7 起**凡新增 brand-scoped / 任何非 user-keyed query**，都自动受此规则保护（因为会话边界 clear 是全量的），但**反过来不要在登出/登录处改成"只清某些 key"**——一旦改成精确清理，新加的 query 就会重新泄漏。要么保持全量 clear，要么给每个 query 的 key 带上 user/brand id（二选一，别半途）。
+
+### disabled 按钮的原生 title / 直挂 tooltip 永不弹（commit e71781d）
+
+**现象**：给 disabled 的 shadcn `Button` 加 `title="权限不足"`（或把 Radix `TooltipTrigger` 直接 asChild 套在 disabled Button 上），hover 完全无反应。
+
+**根因**：disabled 元素不派发指针事件；shadcn `Button` 还额外带 `disabled:pointer-events-none`，触发器收不到 hover。
+
+**修复**：抽 `components/ui/hint.tsx`，Radix 触发器挂到**非 disabled 的 `<span>`** + span 上 `[&_:disabled]:pointer-events-none` 把内部 disabled 子元素的指针事件再屏一层，hover 落 span 上正常弹。详见 LEARNINGS 同批"disabled 控件的 tooltip"。**规则**：任何 disabled 控件要解释原因，一律包 `Hint`，**禁止 `title=` 或把 tooltip 触发器直接挂 disabled 元素**。
+
+**Pending exposure**：现存散落各处的 disabled 控件（Batch 4/5 的 LocationStatusToggle、StaffStatusToggle、各 CRUD 提交按钮）如果以后要加"为何禁用"提示，别走 title，统一改 `Hint`。
+
+### 菜单乐观显示 vs 按钮 fail-closed 方向相反，别套反（`(protected)/layout.tsx`）
+
+**坑点**：perms 还在 loading 时，菜单层 `if (permsLoading) return true` **乐观显示全部**（防 sidebar 闪烁/空出），但按钮层是 **fail-closed disabled**（`has()` loading 返 false）。这两层乐观/保守方向**故意相反**——菜单乐观靠 button-level guard 兜底，短窗口内点进去也是 disabled，不越权。
+
+**易错**：如果有人"为了一致"把菜单也改成 loading 期隐藏，会全屏闪烁；或把按钮也改成 loading 期 enable，会在权限未知时放出可点的越权按钮吃 403。**两层方向不能统一，记死。**
+

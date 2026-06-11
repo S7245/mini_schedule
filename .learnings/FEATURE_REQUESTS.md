@@ -109,3 +109,8 @@ const [pendingDelete, setPendingDelete] = useState<T | null>(null)
 - 当前 InstructorProfileSection 用 csv textarea 是 v1 妥协方案。当 Batch 6 出现 course tags / certificates v2 / brand keywords 等第 2 个数组短文本字段时，**才**开抽 `<ChipInput value={string[]} onChange separators={[',','；',Enter]} />`。
 - 位置：`apps/brand/components/common/chip-input.tsx`；InstructorProfileSection 与 course tags 同步迁移。
 - 不要提前抽：单一调用方场景 textarea 体验够、维护成本低。
+
+### Batch 6 → Batch 7 延后项
+
+- **角色管理页（自定义角色 CRUD UI）**：Batch 6 前端只做了权限消费侧（usePermissions hook + 菜单隐藏 + 按钮 disabled + toast）。品牌后台"角色管理"列表 + 角色编辑器（勾选 permission code、设 data_scope）依赖后端 GET /roles + GET /permissions，留 Batch 7。
+- **T10 端到端回归 Playwright**：Batch 6 加了 data-testid 钩子但未自动跑。建议补关键路径：无 staff.create 权限时"新增员工"按钮 disabled + Hint tooltip 文案、菜单按权限隐藏、登出→换号登录后菜单立即刷新（防缓存泄漏回归，对应 commit 69f513c）。
