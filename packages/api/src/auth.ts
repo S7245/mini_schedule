@@ -165,7 +165,12 @@ export function useBrandLogin() {
           display_name: data.user.name,
         }
       )
-      queryClient.invalidateQueries({ queryKey: ['auth'] })
+      // Drop ALL cached queries on session start. Query keys like
+      // ['brand-me-permissions'] / staff / locations are NOT keyed by user, so
+      // without this the freshly logged-in user would inherit the previous
+      // user's cached permissions, menu and brand-scoped lists until staleTime
+      // elapses or a hard refresh. Clearing here guarantees a clean session.
+      queryClient.clear()
     },
   })
 }
@@ -196,7 +201,12 @@ export function useAdminLogin() {
           display_name: data.user?.username ?? '',
         }
       )
-      queryClient.invalidateQueries({ queryKey: ['auth'] })
+      // Drop ALL cached queries on session start. Query keys like
+      // ['brand-me-permissions'] / staff / locations are NOT keyed by user, so
+      // without this the freshly logged-in user would inherit the previous
+      // user's cached permissions, menu and brand-scoped lists until staleTime
+      // elapses or a hard refresh. Clearing here guarantees a clean session.
+      queryClient.clear()
     },
   })
 }
@@ -235,7 +245,12 @@ export function useAppLogin() {
           display_name: data.user.nickname,
         }
       )
-      queryClient.invalidateQueries({ queryKey: ['auth'] })
+      // Drop ALL cached queries on session start. Query keys like
+      // ['brand-me-permissions'] / staff / locations are NOT keyed by user, so
+      // without this the freshly logged-in user would inherit the previous
+      // user's cached permissions, menu and brand-scoped lists until staleTime
+      // elapses or a hard refresh. Clearing here guarantees a clean session.
+      queryClient.clear()
     },
   })
 }

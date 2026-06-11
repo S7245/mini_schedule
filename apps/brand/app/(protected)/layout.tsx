@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { Inbox, X } from 'lucide-react'
 import { useAuthStore } from '@mini-schedule/api/auth'
 import { getBackofficePageLabel } from '@mini-schedule/admin-system'
@@ -48,6 +49,7 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
   const [sidebarTopInset, setSidebarTopInset] = useState(0)
   const { isAuthenticated, user, logout } = useAuthStore()
   const { has, isLoading: permsLoading } = usePermissions()
+  const queryClient = useQueryClient()
 
   // Filter nav by permission. While the permission set is still loading we
   // optimistically render the full menu — otherwise the user sees the sidebar
@@ -145,6 +147,9 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
       userDescription={user?.role ?? 'brand'}
       onLogout={() => {
         logout()
+        // Drop the previous user's cached permissions / brand-scoped lists so
+        // they don't linger in memory or leak into the next login.
+        queryClient.clear()
         router.replace('/login')
         router.refresh()
       }}
