@@ -111,7 +111,14 @@ function invalidateStaff(
   queryClient: ReturnType<typeof useQueryClient>,
   id?: StaffId,
 ) {
-  queryClient.invalidateQueries({ queryKey: ['brand-staff-list'] })
+  // refetchType: 'all' so the list refetches even while inactive — deletion
+  // happens on the detail page then navigates back to /staff, so the list query
+  // is unmounted at invalidation time; the default 'active' would leave it stale
+  // until a hard reload.
+  queryClient.invalidateQueries({
+    queryKey: ['brand-staff-list'],
+    refetchType: 'all',
+  })
   queryClient.invalidateQueries({ queryKey: onboardingQueryKeys.status() })
   if (id !== undefined) {
     queryClient.invalidateQueries({ queryKey: staffQueryKeys.detail(id) })
