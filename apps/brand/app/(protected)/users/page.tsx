@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
 import { useBrandUsers, useCreateBrandUser } from '@mini-schedule/api/brand'
-import { useAuthStore } from '@mini-schedule/api/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -26,7 +25,6 @@ const createUserSchema = z.object({
 type CreateUserForm = z.infer<typeof createUserSchema>
 
 export default function UsersPage() {
-  const { user } = useAuthStore()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
