@@ -90,6 +90,9 @@ export default function LocationsPage() {
           case ErrorCodes.LOCATION_NOT_FOUND:
             toast.error('门店不存在或已删除')
             break
+          case ErrorCodes.LOCATION_IN_USE:
+            toast.error('该门店仍有员工任职或角色绑定，请先移除后再删除')
+            break
           default:
             toast.error(e.message || '删除失败，请重试')
         }
