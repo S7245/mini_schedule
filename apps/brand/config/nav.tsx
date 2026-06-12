@@ -5,6 +5,7 @@ import {
   Inbox,
   LayoutDashboard,
   ShieldCheck,
+  Store,
   UsersRound,
 } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
@@ -20,6 +21,11 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/staff',
     label: '员工管理',
     icon: <Contact className="h-4 w-4" />,
+  },
+  {
+    href: '/locations',
+    label: '门店管理',
+    icon: <Store className="h-4 w-4" />,
   },
   {
     href: '/roles',
