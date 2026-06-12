@@ -28,6 +28,7 @@ import { PermissionsProvider, PERMISSIONS, usePermissions } from '@/lib/permissi
  */
 const NAV_HREF_PERMISSIONS: Record<string, string> = {
   '/staff': PERMISSIONS.STAFF_VIEW,
+  '/roles': PERMISSIONS.ROLE_MANAGE,
 }
 
 interface ProtectedLayoutProps {

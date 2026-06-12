@@ -4,6 +4,7 @@ import {
   Dumbbell,
   Inbox,
   LayoutDashboard,
+  ShieldCheck,
   UsersRound,
 } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
@@ -19,6 +20,11 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/staff',
     label: '员工管理',
     icon: <Contact className="h-4 w-4" />,
+  },
+  {
+    href: '/roles',
+    label: '角色管理',
+    icon: <ShieldCheck className="h-4 w-4" />,
   },
   {
     href: '/users',
