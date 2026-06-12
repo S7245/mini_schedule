@@ -114,3 +114,10 @@ const [pendingDelete, setPendingDelete] = useState<T | null>(null)
 
 - **角色管理页（自定义角色 CRUD UI）**：Batch 6 前端只做了权限消费侧（usePermissions hook + 菜单隐藏 + 按钮 disabled + toast）。品牌后台"角色管理"列表 + 角色编辑器（勾选 permission code、设 data_scope）依赖后端 GET /roles + GET /permissions，留 Batch 7。
 - **T10 端到端回归 Playwright**：Batch 6 加了 data-testid 钩子但未自动跑。建议补关键路径：无 staff.create 权限时"新增员工"按钮 disabled + Hint tooltip 文案、菜单按权限隐藏、登出→换号登录后菜单立即刷新（防缓存泄漏回归，对应 commit 69f513c）。
+
+## 2026-06-12 Batch 7 code-review 转移项
+
+Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（commit `d207688`：角色停用/启用对 ROLE_NOT_FOUND 的处理对齐 confirmDelete）。以下转后续：
+
+- ~~**B1 编辑既有角色被"全集校验"卡死**~~ ✅ **已解决**（2026-06-12，用户选 option B，backend commit `e17cdd0`：UpdateRole 改增量校验，只对新增权限做 ⊆ actor 校验，保留/移除既有权限放行，新增越权仍拒）。原始记录：后端 `guardPermissionSubset` 曾对**每次** update 校验提交的**全部** permission_codes ⊆ actor 有效权限（owner 例外）；前端 `role-editor-dialog.tsx` 刻意把"已勾但 actor 无权授予"的权限保留为可见可移除并在保存时回传。后果：非 owner 且持 `role.manage` 的 actor，编辑一个含其自身缺失权限（如 location.delete）的自定义角色时，即便只改名也被 `ROLE_PERMISSION_EXCEEDS_ACTOR` 拒绝，且 toast「请取消多余项」无对应高亮项，用户无从下手。可达性二阶（默认 brand_admin 多为全权不触发；需有人造出"带 role.manage 但缺某权限"的受限自定义角色）。建议（待用户确认）：后端 update 只对**新增**的 code（不在角色现有集合中的）做 subset 校验，保留/移除既有权限不校验——既守住"不能授予自己没有的权限"的提权防线，又解开编辑死结。create 仍全集校验（全是新增）。需要 `requireMutableCustomRole`/`UpdateRole` 先取角色现有权限码做 diff。
+- **lint 覆盖缺 react-hooks / next core-web-vitals（仓库级 tooling）**：Batch 7 把 brand 的 lint 从 `next lint` 换为 `eslint .` 并新增 `apps/brand/eslint.config.mjs`（镜像 admin 现有 flat config），但该 flat config 未注册 `eslint-plugin-react-hooks`（rules-of-hooks / exhaustive-deps）与 `next/core-web-vitals`——admin 早已是同样情况，故属仓库既有约定而非本批回退。本批新 role-editor 的两个 useEffect 依赖数组已人工核对正确。建议：给 admin + brand 两个 flat config 补 `eslint-plugin-react-hooks`（依赖已在 node_modules），统一恢复 hooks 规则覆盖；`packages/config/eslint.js` 里的 `next/core-web-vitals` 当前未被 flat config 引用，一并梳理。
