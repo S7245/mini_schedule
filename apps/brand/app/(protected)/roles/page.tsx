@@ -112,11 +112,18 @@ export default function RolesPage() {
           case ErrorCodes.OWNER_PROTECTED:
             toast.error('品牌负责人角色受系统保护')
             break
+          case ErrorCodes.ROLE_NOT_FOUND:
+            toast.error('角色不存在或已被删除')
+            break
           default:
             toast.error(e.message || '操作失败，请重试')
         }
       } else {
         toast.error('操作失败，请重试')
+      }
+      // 角色已被他处删除时重试无意义，关闭弹窗（与 confirmDelete 一致）。
+      if (e instanceof ApiErrorClass && e.code === ErrorCodes.ROLE_NOT_FOUND) {
+        setStatusTarget(null)
       }
     }
   }
