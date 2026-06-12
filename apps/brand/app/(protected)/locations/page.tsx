@@ -46,6 +46,7 @@ const STATUS_BADGE: Record<string, string> = {
 export default function LocationsPage() {
   const { has } = usePermissions()
   const canCreate = has(PERMISSIONS.LOCATION_CREATE)
+  const canEdit = has(PERMISSIONS.LOCATION_EDIT)
   const canDelete = has(PERMISSIONS.LOCATION_DELETE)
 
   const [page, setPage] = useState(1)
@@ -202,14 +203,19 @@ export default function LocationsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-3 text-sm">
-                      <button
-                        type="button"
-                        className="text-primary hover:underline"
-                        onClick={() => openEdit(loc)}
-                        data-testid={`location-edit-${loc.id}`}
+                      <Hint
+                        content={canEdit ? undefined : PERMISSION_DENIED_TOOLTIP}
                       >
-                        编辑
-                      </button>
+                        <button
+                          type="button"
+                          className="text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                          disabled={!canEdit}
+                          onClick={() => openEdit(loc)}
+                          data-testid={`location-edit-${loc.id}`}
+                        >
+                          编辑
+                        </button>
+                      </Hint>
                       <LocationStatusToggle location={loc} />
                       <Hint
                         content={canDelete ? undefined : PERMISSION_DENIED_TOOLTIP}
