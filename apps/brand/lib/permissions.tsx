@@ -33,6 +33,8 @@ export const PERMISSIONS = {
 
   INSTRUCTOR_VIEW: 'instructor.view',
   INSTRUCTOR_EDIT: 'instructor.edit',
+
+  ROLE_MANAGE: 'role.manage',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
