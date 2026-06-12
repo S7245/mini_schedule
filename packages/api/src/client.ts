@@ -73,7 +73,28 @@ export async function api<T>(
     headers,
   })
 
-  const json: ApiResponse<T> = await response.json()
+  // 204 No Content (and any other empty body) has nothing to parse. Backend
+  // delete endpoints return 204, so calling response.json() here would throw a
+  // SyntaxError and reject an otherwise-successful request. Treat an empty body
+  // as success-with-no-data; if the empty response is itself an error status,
+  // surface a generic API error instead.
+  const rawBody = await response.text()
+  if (!rawBody) {
+    if (!response.ok) {
+      const apiError = new ApiErrorClass(
+        'UNKNOWN_ERROR',
+        `请求失败 (${response.status})`,
+        response.status,
+      )
+      if (!silent) {
+        showErrorToast(apiError)
+      }
+      throw apiError
+    }
+    return undefined as T
+  }
+
+  const json: ApiResponse<T> = JSON.parse(rawBody)
 
   // Backend success responses currently use code === "OK".
   if (json.code !== 'OK') {
