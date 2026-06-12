@@ -44,12 +44,14 @@ async function gotoLocations(page: Page) {
   await expect(page.getByTestId('locations-table')).toBeVisible({ timeout: 15000 })
 }
 
-// 软删一个门店（按名定位行 → 删除按钮 → 确认弹窗）
+// 软删一个门店（按名定位行 → 删除按钮 → 确认弹窗）。
+// 注意：删除确认弹窗的确认按钮文案是「删除」，与行内「删除」按钮同名，
+// 故确认点击必须 scope 到弹窗（getByRole('dialog')）。
 async function deleteLocationByName(page: Page, name: string) {
   const row = rowByName(page, name)
   if ((await row.count()) === 0) return
   await row.locator('[data-testid^="location-delete-"]').click()
-  await page.locator('button:has-text("确定")').click()
+  await page.getByRole('dialog').getByRole('button', { name: '删除', exact: true }).click()
   await expect(rowByName(page, name)).toHaveCount(0, { timeout: 15000 })
 }
 
@@ -116,8 +118,10 @@ test.describe.serial('Batch 8 — 门店管理页 /locations', () => {
   test('H4 停用 → 状态 badge 变为停用（经确认弹窗）', async () => {
     await gotoLocations(page)
     const row = rowByName(page, LOC_A)
+    // 触发按钮文案为「停用」（actionLabel），确认弹窗的确认按钮同样是「停用」，
+    // 故确认点击 scope 到弹窗，避免与触发按钮歧义。
     await row.locator('[data-testid^="location-status-toggle-"]').click()
-    await page.locator('button:has-text("确定")').click()
+    await page.getByRole('dialog').getByRole('button', { name: '停用', exact: true }).click()
     await expect(rowByName(page, LOC_A).getByTestId('location-status-badge')).toHaveText('停用', {
       timeout: 15000,
     })
