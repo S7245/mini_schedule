@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -119,6 +120,43 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 )
+
+/**
+ * True once the persisted auth store has finished rehydrating from
+ * localStorage.
+ *
+ * On a hard page load — refreshing a protected route, or deep-linking straight
+ * to e.g. /locations — the store starts at its default (un-hydrated) state, so
+ * `isAuthenticated` is momentarily `false` before rehydration completes. Route
+ * guards MUST wait for this flag before treating the user as logged out;
+ * otherwise a logged-in user is bounced to /login, and the middleware then
+ * bounces the still-valid cookie back to /dashboard. Soft (client-side) nav is
+ * unaffected because the store never un-hydrates, which is why the bug only
+ * shows on hard loads.
+ */
+export function useAuthHydrated(): boolean {
+  // Start `false` on both server and first client render so SSR never touches
+  // the persist API (which is client-only and undefined during SSR). The effect
+  // — which runs on the client only — flips it true once rehydration finishes.
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    const persistApi = useAuthStore.persist
+    // Defensive: if persistence is somehow unavailable, don't block the app.
+    if (!persistApi) {
+      setHydrated(true)
+      return
+    }
+    const unsub = persistApi.onFinishHydration(() => setHydrated(true))
+    // Cover the case where rehydration already finished before this effect ran.
+    if (persistApi.hasHydrated()) {
+      setHydrated(true)
+    }
+    return unsub
+  }, [])
+
+  return hydrated
+}
 
 // ─── Login request types ─────────────────────────────────
 

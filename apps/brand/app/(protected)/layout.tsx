@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { Inbox, X } from 'lucide-react'
-import { useAuthStore } from '@mini-schedule/api/auth'
+import { useAuthStore, useAuthHydrated } from '@mini-schedule/api/auth'
 import { getBackofficePageLabel } from '@mini-schedule/admin-system'
 import { ProtectedAppLayout } from '@mini-schedule/admin-system/shell/protected-app-layout'
 import { Button } from '@/components/ui/button'
@@ -50,6 +50,7 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
   const [supportCardOpen, setSupportCardOpen] = useState(true)
   const [sidebarTopInset, setSidebarTopInset] = useState(0)
   const { isAuthenticated, user, logout } = useAuthStore()
+  const authHydrated = useAuthHydrated()
   const { has, isLoading: permsLoading } = usePermissions()
   const queryClient = useQueryClient()
 
@@ -75,6 +76,16 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
         if (platform === 'darwin') setSidebarTopInset(28)
       })
     }
+  }, [])
+
+  useEffect(() => {
+    // Wait for the persisted store to rehydrate before judging auth state. On a
+    // hard load `isAuthenticated` is transiently false; redirecting here would
+    // bounce a logged-in user to /login (and middleware then bounces the valid
+    // cookie back to /dashboard).
+    if (!authHydrated) {
+      return
+    }
 
     if (!isAuthenticated) {
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
@@ -85,9 +96,9 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
     if (user?.user_type !== 'brand') {
       router.push('/unauthorized')
     }
-  }, [isAuthenticated, user, router, pathname])
+  }, [authHydrated, isAuthenticated, user, router, pathname])
 
-  if (!isAuthenticated) {
+  if (!authHydrated || !isAuthenticated) {
     return null
   }
 
