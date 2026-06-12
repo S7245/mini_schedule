@@ -209,3 +209,17 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 - `fetchMyPermissions(true)` 默认 `silent`——权限拉取失败不弹 toast，交给 `usePermissions` fail-closed 静默降级。Batch 7 类似"基础设施类"query（feature flag / 配置）都按 silent + 上层 fail-closed。
 - 返回体含 `data_scope`（`all_brand` / `assigned_locations[location_ids]` / `none`），`usePermissions().dataScope` 已透出。`none` 是显式 narrow case（无 active 角色），消费侧要 handle，不要假设非 none。data_scope 的列表过滤消费目前框架就位、具体列表页消费按需接。
 
+
+## 2026-06-12 Batch 7 — 自定义角色 UI
+
+- **失效"非活动" query 要用 `refetchType:'all'`**：删除操作发生在详情页、随即 `router.push` 回列表时，列表 query 已卸载（inactive）。`invalidateQueries` 默认 `refetchType:'active'` 只刷新活动 query → 列表 stale 直到硬刷。改 `{ queryKey, refetchType: 'all' }` 让非活动 query 也立即重拉。
+- **B1 前后端语义必须对齐（增量）**：编辑器禁用"勾选 actor 无权授予的新权限"（canGrant=false 且未勾→disabled），但保留已勾的越权权限可移除。后端必须配套"只校验新增权限"，否则保存既有越权权限被拒、UI 无高亮项、用户无从下手。前端 disable 防新增 + 后端增量校验 = 一致。
+- **角色编辑器三态复用一个 Dialog**：create/edit/copy 三模式共用一个组件——create 空表单 POST；edit 按 code 拉详情预填、PUT、scope 锁定（A3）；copy 从系统角色预填（name+「副本」、同 scope/perms）但走 POST。权限勾选树按 domain 分组，数据源 `GET /permissions`。
+
+## 2026-06-12 Batch 8 — 门店管理页 + 共享底层修复
+
+- **fetch 响应要先判空 body 再 parse**：后端 DELETE 返 `204 No Content`，`response.json()` 对空 body 抛 SyntaxError，会把成功请求变成 reject。统一改：先 `await response.text()`，空串时 ok→返 undefined、非 ok→抛通用 ApiError，非空再 `JSON.parse`。所有 DELETE 路径受益（client.ts，三端共用）。
+- **zustand persist 路由守卫要等 rehydration**：hard load（deep-link/刷新）时 persist 未水合，`isAuthenticated` 瞬时 false，守卫会误跳 /login（middleware 再用 cookie 弹回 /dashboard）。加 SSR-safe `useAuthHydrated()`：`useState(false)` 初值（SSR/首帧都 false，不碰 client-only 的 persist API），仅在 `useEffect` 里 `persist.onFinishHydration()` + `persist.hasHydrated()` 兜底。**不能在 useState 初始化器里调 persist，SSR 会 TypeError**。守卫的跳转 effect + `return null` gate 都要 `&& authHydrated`。soft nav 不受影响（store 不会 un-hydrate）。
+- **共享包新增直接 import 要同步声明依赖**：`packages/api/auth.ts` 直接 `import 'react'` 但 package.json 没声明 react（一直经 react-query 隐式用）→ dev 能跑、prod `build` 报 `Cannot find module 'react'`。给 packages/api 补 `peerDependencies.react` + devDependencies(react+@types/react)。**dev server 不全量 type-check，验收必须额外跑一次 prod build**。
+- **门店管理页 = 镜像 /staff+/roles**：列表表格 + 状态筛选 + 分页 + 空状态 + 行操作（编辑/停用切换/删除）全部 permission-gate + Hint；复用既有 location API hooks/类型/form-dialog/status-toggle，零新增。data_scope 后端已过滤，前端无需处理。
+- **e2e 确认弹窗按钮要 scope 到 dialog**：`ConfirmDialog` 的确认按钮文案是业务词（删除/停用 actionLabel）而非「确定」，且常与触发按钮同名 → `page.getByRole('dialog').getByRole('button', { name, exact: true })` 消歧。

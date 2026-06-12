@@ -102,3 +102,15 @@
 
 **易错**：如果有人"为了一致"把菜单也改成 loading 期隐藏，会全屏闪烁；或把按钮也改成 loading 期 enable，会在权限未知时放出可点的越权按钮吃 403。**两层方向不能统一，记死。**
 
+
+## 2026-06-12 Batch 7
+
+- **删员工后列表 stale 须硬刷（已修）**：详情页删除 → `router.push('/staff')`，列表 query 卸载，默认 `refetchType:'active'` 不刷新它 → 回列表仍显示已删员工。修：`invalidateStaff` 用 `refetchType:'all'`（commit `e113d72`）。Pending exposure：其它"详情页 mutate → 导航回列表"的路径（course/user 等）若同样依赖 active 失效，也会 stale，值得排查。
+- **`.next` 缺 lucide-react vendor-chunk 致 /roles 整页 Runtime ENOENT（验收期，环境问题）**：dev server 增量构建偶发 vendor-chunk 缺失，重启 :3002 解决。非 Batch 7 代码问题。
+- **zustand persist 水合竞态：硬 URL 直达深链瞬时跳 /dashboard（既有，非本批）**：persist 未水合时 protected layout 瞬时判未登录。点侧栏软导航正常。FR 已记，建议等 `hasHydrated` 再做鉴权判断。
+
+## 2026-06-12 Batch 8
+
+- **所有 DELETE 静默失败（已修 `fe27ace`）**：`client.ts` 无条件 `response.json()`，后端 204 空 body 抛 SyntaxError，请求 reject → 弹窗不关 + toast「删除失败」，但后端实际已删。修：先 text() 判空。Pending exposure：任何返 204/空 body 的接口（未来 PUT/POST 若返 204）都曾受影响，全线受益。
+- **硬 URL 直达 protected route 被弹走（已修 `5b5001d`）**：zustand persist 未水合 → 守卫误判未登录。修：useAuthHydrated 门控。Pending exposure：**app/admin 两端 protected layout 大概率同款竞态，本批未改**。
+- **prod build 报 `Cannot find module 'react'`（已修）**：packages/api 新增直接 react import 但未声明依赖；dev/e2e 不暴露（dev 不全量 typecheck）。修：package.json 补 react peer+dev。教训：验收流程加一步 `pnpm --filter <app> build`。

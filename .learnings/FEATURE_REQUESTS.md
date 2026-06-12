@@ -121,3 +121,16 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 
 - ~~**B1 编辑既有角色被"全集校验"卡死**~~ ✅ **已解决**（2026-06-12，用户选 option B，backend commit `e17cdd0`：UpdateRole 改增量校验，只对新增权限做 ⊆ actor 校验，保留/移除既有权限放行，新增越权仍拒）。原始记录：后端 `guardPermissionSubset` 曾对**每次** update 校验提交的**全部** permission_codes ⊆ actor 有效权限（owner 例外）；前端 `role-editor-dialog.tsx` 刻意把"已勾但 actor 无权授予"的权限保留为可见可移除并在保存时回传。后果：非 owner 且持 `role.manage` 的 actor，编辑一个含其自身缺失权限（如 location.delete）的自定义角色时，即便只改名也被 `ROLE_PERMISSION_EXCEEDS_ACTOR` 拒绝，且 toast「请取消多余项」无对应高亮项，用户无从下手。可达性二阶（默认 brand_admin 多为全权不触发；需有人造出"带 role.manage 但缺某权限"的受限自定义角色）。建议（待用户确认）：后端 update 只对**新增**的 code（不在角色现有集合中的）做 subset 校验，保留/移除既有权限不校验——既守住"不能授予自己没有的权限"的提权防线，又解开编辑死结。create 仍全集校验（全是新增）。需要 `requireMutableCustomRole`/`UpdateRole` 先取角色现有权限码做 diff。
 - **lint 覆盖缺 react-hooks / next core-web-vitals（仓库级 tooling）**：Batch 7 把 brand 的 lint 从 `next lint` 换为 `eslint .` 并新增 `apps/brand/eslint.config.mjs`（镜像 admin 现有 flat config），但该 flat config 未注册 `eslint-plugin-react-hooks`（rules-of-hooks / exhaustive-deps）与 `next/core-web-vitals`——admin 早已是同样情况，故属仓库既有约定而非本批回退。本批新 role-editor 的两个 useEffect 依赖数组已人工核对正确。建议：给 admin + brand 两个 flat config 补 `eslint-plugin-react-hooks`（依赖已在 node_modules），统一恢复 hooks 规则覆盖；`packages/config/eslint.js` 里的 `next/core-web-vitals` 当前未被 flat config 引用，一并梳理。
+
+## 2026-06-12 Batch 7 验收期新增
+
+- **`location.view` 无前端可见门 + `/locations` 管理页未建（Batch 4 FR 4.2 遗留）**：当前 `NAV_HREF_PERMISSIONS` 只有 `/staff`=staff.view、`/roles`=role.manage，`location.view` 不驱动任何菜单/按钮。契约 Happy #7/#8 描述的"location 入口随权限消失"在前端无体现（C1 主动失效已在 API+Redis 层证实，底层无问题）。建议：实现 `apps/brand/app/(protected)/locations/page.tsx`（门店 CRUD + 状态切换，复用 staff 页表格/弹窗模式）时，一并在 `NAV_HREF_PERMISSIONS` 加 `/locations`=location.view，让 location.view 有可见落点。
+- **zustand persist 水合竞态致硬 URL 直达 `/roles` 瞬时跳 `/dashboard`**（既有问题，非 Batch 7）：persist 未水合时瞬时判未登录 → 跳转。点侧栏软导航正常。建议在 protected layout 的鉴权判断里等 persist `hasHydrated` 再决策，避免直达深链被踢。
+
+## 2026-06-12 Batch 8 验收期新增
+
+- **app/admin 两端 protected layout 水合竞态**：Batch 8 只给 brand 加了 `useAuthHydrated()` 门控；`apps/app` 和 `apps/admin` 的 protected layout 若有同样的 hard-load 守卫，也会把已登录用户瞬时弹走。建议同样接 `useAuthHydrated()`（已在 `@mini-schedule/api/auth` 导出，可直接复用）。
+- **门店删除引用保护（LOCATION_IN_USE）**：后端现状直接软删无检查。门店被员工任职（brand_user_location_assignments）或未来课程场次引用时，应类似 Batch 7 A4 拒删并提示。等场次表落地后一并做。
+- **UpdateStatus 改 gate location.toggle_status**：现 location.edit；migration seed 的专用 `location.toggle_status` 一直闲置。改时前端 LocationStatusToggle 也要从 LOCATION_EDIT 换到新常量。注意自定义角色若只给 edit 未给 toggle_status 会失去切换能力（行为变化）。
+- **后端 location list 加 name 搜索**：现仅 status 筛选 + 分页（前端管理页无搜索框）。门店多时需要 `q` 模糊搜索（参考 staff list 的 q 参数）。
+- **e2e 补「店长权限门」用例**：断言 location_manager（13900139001，仅 location.view 无 create/edit/delete）在 /locations 上新建/编辑/删除按钮全 disabled + Hint。
