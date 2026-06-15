@@ -1,11 +1,13 @@
 import {
   BookOpen,
+  CalendarClock,
   Contact,
   Dumbbell,
   Inbox,
   LayoutDashboard,
   ShieldCheck,
   Store,
+  Tags,
   UsersRound,
 } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
@@ -38,9 +40,19 @@ export const brandNavItems: BackofficeNavItem[] = [
     icon: <UsersRound className="h-4 w-4" />,
   },
   {
+    href: '/course-categories',
+    label: '课程分类',
+    icon: <Tags className="h-4 w-4" />,
+  },
+  {
     href: '/courses',
-    label: '课程管理',
+    label: '课程模板',
     icon: <BookOpen className="h-4 w-4" />,
+  },
+  {
+    href: '/schedule',
+    label: '排课',
+    icon: <CalendarClock className="h-4 w-4" />,
   },
   {
     href: '/trainings',

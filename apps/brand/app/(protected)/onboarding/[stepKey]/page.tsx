@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
@@ -31,6 +32,28 @@ const VALID_DYNAMIC_KEYS: OnboardingStepKey[] = [
 
 function isValidKey(value: string): value is OnboardingStepKey {
   return (VALID_DYNAMIC_KEYS as string[]).includes(value)
+}
+
+// Batch 11: these steps now have real management pages — surface a CTA + override
+// the "coming soon" hint. Completion is reflected by the backend onboarding count.
+const STEP_CTA: Partial<
+  Record<OnboardingStepKey, { href: string; label: string; hint: string }>
+> = {
+  course_category: {
+    href: '/course-categories',
+    label: '前往课程分类',
+    hint: '创建课程分类后回到向导，此步将自动标记完成。',
+  },
+  course_template: {
+    href: '/courses',
+    label: '前往课程模板',
+    hint: '创建并发布课程模板后回到向导，此步将自动标记完成。',
+  },
+  class_session: {
+    href: '/schedule',
+    label: '前往排课',
+    hint: '排出第一节场次后回到向导，此步将自动标记完成。',
+  },
 }
 
 function nextStepKey(current: OnboardingStepKey): OnboardingStepKey | null {
@@ -165,7 +188,21 @@ export default function DynamicOnboardingStepPage() {
         </div>
       }
     >
-      <StepPlaceholder stepKey={stepKey} />
+      {STEP_CTA[stepKey] ? (
+        <StepPlaceholder
+          stepKey={stepKey}
+          hint={STEP_CTA[stepKey]!.hint}
+          actions={
+            <Link href={STEP_CTA[stepKey]!.href}>
+              <Button data-testid={`onboarding-cta-${stepKey}`}>
+                {STEP_CTA[stepKey]!.label}
+              </Button>
+            </Link>
+          }
+        />
+      ) : (
+        <StepPlaceholder stepKey={stepKey} />
+      )}
 
       <ConfirmDialog
         open={confirmSkip}
