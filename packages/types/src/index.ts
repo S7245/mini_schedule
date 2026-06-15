@@ -170,11 +170,10 @@ export interface AdminUser {
   updated_at: string
 }
 
-// ─── Course ──────────────────────────────────────────────
+// ─── Course (legacy fitness model — kept only for legacy /trainings refs) ─────
 
 export type CourseType = 'strength' | 'cardio' | 'flexibility' | 'hiit'
 export type CourseDifficulty = 'beginner' | 'intermediate' | 'advanced'
-export type CourseStatus = 'draft' | 'published' | 'archived'
 
 export interface Course {
   id: string
@@ -189,6 +188,207 @@ export interface Course {
   cover_url: string | null
   created_at: string
   updated_at: string
+}
+
+// ─── Course Category (Batch 11) ──────────────────────────
+
+export type CourseCategoryStatus = 'active' | 'inactive'
+export type CourseCategoryStatusFilter = CourseCategoryStatus | 'all'
+
+export interface CourseCategory {
+  id: number
+  brand_id: number
+  name: string
+  color: string | null
+  icon: string | null
+  sort_order: number
+  show_in_mini_program: boolean
+  status: CourseCategoryStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateCourseCategoryInput {
+  name: string
+  color?: string | null
+  icon?: string | null
+  sort_order?: number
+  show_in_mini_program?: boolean
+}
+
+export interface UpdateCourseCategoryInput {
+  name?: string
+  color?: string | null
+  icon?: string | null
+  sort_order?: number
+  show_in_mini_program?: boolean
+  status?: CourseCategoryStatus
+}
+
+// ─── Course Template (Batch 11 — replaces legacy fitness course CRUD) ─────────
+
+export type CourseStatus = 'draft' | 'published' | 'archived'
+export type CourseStatusFilter = CourseStatus | 'all'
+
+/** Lightweight category reference embedded in a course list/detail response. */
+export interface CourseCategoryRef {
+  id: number
+  name: string
+  color: string | null
+}
+
+/** Row in the /courses list table. Arrays are always present (never omitted). */
+export interface CourseTemplateListItem {
+  id: number
+  title: string
+  level_label: string | null
+  duration_min: number
+  default_capacity: number
+  status: CourseStatus
+  categories: CourseCategoryRef[]
+  available_location_count: number
+  show_in_mini_program: boolean
+  created_at: string
+  updated_at: string
+}
+
+/** Full course template detail (GET /courses/:id). */
+export interface CourseTemplate {
+  id: number
+  brand_id: number
+  title: string
+  description: string | null
+  cover_url: string | null
+  level_label: string | null
+  duration_min: number
+  default_capacity: number
+  status: CourseStatus
+  show_in_mini_program: boolean
+  categories: CourseCategoryRef[]
+  category_ids: number[]
+  available_location_ids: number[]
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateCourseTemplateInput {
+  title: string
+  description?: string | null
+  cover_url?: string | null
+  level_label?: string | null
+  duration_min: number
+  default_capacity: number
+  category_ids: number[]
+  /** Available locations; empty array = default to all active locations (backend). */
+  location_ids: number[]
+  show_in_mini_program?: boolean
+}
+
+export interface UpdateCourseTemplateInput {
+  title?: string
+  description?: string | null
+  cover_url?: string | null
+  level_label?: string | null
+  duration_min?: number
+  default_capacity?: number
+  category_ids?: number[]
+  location_ids?: number[]
+  show_in_mini_program?: boolean
+}
+
+export interface CourseTemplateListQuery {
+  page?: number
+  page_size?: number
+  status?: CourseStatusFilter
+  q?: string
+  category_id?: number
+}
+
+// ─── Class Session (Batch 11) ────────────────────────────
+
+export type ClassSessionStatus =
+  | 'scheduled'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+export type ClassSessionStatusFilter = ClassSessionStatus | 'all'
+
+/** Row in the /schedule (class-sessions) list table. */
+export interface ClassSessionListItem {
+  id: number
+  course_id: number
+  course_title: string
+  location_id: number
+  location_name: string
+  instructor_profile_id: number
+  instructor_name: string
+  starts_at: string
+  ends_at: string
+  capacity: number
+  booked_count: number
+  status: ClassSessionStatus
+  created_at: string
+  updated_at: string
+}
+
+/** Full class session detail (GET /class-sessions/:id). */
+export interface ClassSession {
+  id: number
+  brand_id: number
+  course_id: number
+  course_title: string
+  location_id: number
+  location_name: string
+  instructor_profile_id: number
+  instructor_name: string
+  starts_at: string
+  ends_at: string
+  capacity: number
+  booked_count: number
+  waitlist_limit: number
+  status: ClassSessionStatus
+  cancel_reason: string | null
+  cancelled_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateClassSessionInput {
+  course_id: number
+  location_id: number
+  instructor_profile_id: number
+  starts_at: string
+  ends_at: string
+  capacity?: number
+  waitlist_limit?: number
+}
+
+export interface CancelClassSessionInput {
+  cancel_reason?: string
+}
+
+export interface ClassSessionListQuery {
+  page?: number
+  page_size?: number
+  location_id?: number
+  course_id?: number
+  instructor_profile_id?: number
+  status?: ClassSessionStatusFilter
+  from?: string
+  to?: string
+}
+
+/**
+ * Schedulable instructor option for the create-session dialog.
+ * Source: GET /api/v1/brand/instructors?schedulable=true (assumption — backend
+ * must expose instructor_profile_id keyed list; see agent report).
+ */
+export interface SchedulableInstructor {
+  id: number
+  display_name: string
+  status: InstructorStatus
+  is_schedulable: boolean
 }
 
 // ─── Training ────────────────────────────────────────────

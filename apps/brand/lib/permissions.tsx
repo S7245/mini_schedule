@@ -35,6 +35,22 @@ export const PERMISSIONS = {
   INSTRUCTOR_EDIT: 'instructor.edit',
 
   ROLE_MANAGE: 'role.manage',
+
+  // Course Category (Batch 11)
+  COURSE_CATEGORY_VIEW: 'course_category.view',
+  COURSE_CATEGORY_CREATE: 'course_category.create',
+  COURSE_CATEGORY_EDIT: 'course_category.edit',
+
+  // Course Template (Batch 11)
+  COURSE_VIEW: 'course.view',
+  COURSE_CREATE: 'course.create',
+  COURSE_EDIT: 'course.edit',
+  COURSE_DELETE: 'course.delete',
+
+  // Class Session (Batch 11)
+  SESSION_VIEW: 'session.view',
+  SESSION_CREATE: 'session.create',
+  SESSION_CANCEL: 'session.cancel',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
