@@ -229,3 +229,9 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 - **真实栈 e2e 的多步 setup 走 page.request 直连后端，别全用 UI**：UI 表单登录拿到 token（`page.evaluate` 读 `localStorage['auth-storage'].state.accessToken`）后，用 `page.request.{post,put,delete}` + `Authorization: Bearer` 直接调 `/api/v1/brand/*` 建/改/清测试数据（建门店、建员工并 `location_assignments` 一次派店、清任职）。比纯 UI 点选快且稳，UI 只留"被测断言"那步。请求走 :3002 经 Next rewrite 代理到后端，无需直连 :8081。
 - **CreateStaffInput 支持内联 `location_assignments`**：建员工时一并 `[{location_id, assignment_type:'member', is_primary:true}]` 即派店，省一次 PUT location-assignments。
 - **后端改了 guard 必须重启/重建再跑 e2e**：旧 `go run` 二进制不含新逻辑，G1 会假失败（连续两批的坑，已成定式）。
+
+## 2026-06-15 Batch 10 — 已解决的 FR
+
+- app/admin 水合竞态：两端 protected 守卫（app layout + AdminGuard）已接 `useAuthHydrated`，与 brand 一致。三端 deep-link/刷新不再瞬闪 /login。
+- location list name 搜索：前端门店页加搜索框 + `useBrandLocations(page,pageSize,status,q?)`，后端 server-side ILIKE 过滤。
+- 只读权限门 e2e 已落 `e2e/batch-10-location-permission-gate.spec.ts`。
