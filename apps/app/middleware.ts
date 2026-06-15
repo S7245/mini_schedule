@@ -5,15 +5,8 @@ const publicPaths = ['/login']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const cookie = request.cookies.get('auth-storage')
-
-  let isAuthenticated = false
-  if (cookie?.value) {
-    try {
-      const parsed = JSON.parse(cookie.value)
-      isAuthenticated = parsed.state?.isAuthenticated === true
-    } catch { /* invalid */ }
-  }
+  const accessToken = request.cookies.get('app_access_token')?.value
+  const isAuthenticated = Boolean(accessToken)
 
   if (publicPaths.includes(pathname) && isAuthenticated) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
