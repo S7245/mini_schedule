@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useAuthStore } from '@mini-schedule/api/auth'
+import { useAuthStore, useAuthHydrated } from '@mini-schedule/api/auth'
 
 interface AdminGuardProps {
   children: ReactNode
@@ -14,8 +14,14 @@ export function AdminGuard({ children }: AdminGuardProps) {
   const pathname = usePathname()
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const user = useAuthStore((state) => state.user)
+  const authHydrated = useAuthHydrated()
 
   useEffect(() => {
+    // Wait for the persisted store to rehydrate before judging auth state. On a
+    // hard load `isAuthenticated` is transiently false; redirecting here would
+    // bounce a logged-in admin to /login.
+    if (!authHydrated) return
+
     if (!isAuthenticated) {
       router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
       return
@@ -24,9 +30,9 @@ export function AdminGuard({ children }: AdminGuardProps) {
     if (user && user.user_type !== 'admin') {
       router.replace('/unauthorized')
     }
-  }, [isAuthenticated, pathname, router, user])
+  }, [authHydrated, isAuthenticated, pathname, router, user])
 
-  if (!isAuthenticated || (user && user.user_type !== 'admin')) {
+  if (!authHydrated || !isAuthenticated || (user && user.user_type !== 'admin')) {
     return null
   }
 
