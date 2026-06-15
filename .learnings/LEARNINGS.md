@@ -223,3 +223,9 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 - **共享包新增直接 import 要同步声明依赖**：`packages/api/auth.ts` 直接 `import 'react'` 但 package.json 没声明 react（一直经 react-query 隐式用）→ dev 能跑、prod `build` 报 `Cannot find module 'react'`。给 packages/api 补 `peerDependencies.react` + devDependencies(react+@types/react)。**dev server 不全量 type-check，验收必须额外跑一次 prod build**。
 - **门店管理页 = 镜像 /staff+/roles**：列表表格 + 状态筛选 + 分页 + 空状态 + 行操作（编辑/停用切换/删除）全部 permission-gate + Hint；复用既有 location API hooks/类型/form-dialog/status-toggle，零新增。data_scope 后端已过滤，前端无需处理。
 - **e2e 确认弹窗按钮要 scope 到 dialog**：`ConfirmDialog` 的确认按钮文案是业务词（删除/停用 actionLabel）而非「确定」，且常与触发按钮同名 → `page.getByRole('dialog').getByRole('button', { name, exact: true })` 消歧。
+
+## 2026-06-12 Batch 9 — e2e API-setup 模式
+
+- **真实栈 e2e 的多步 setup 走 page.request 直连后端，别全用 UI**：UI 表单登录拿到 token（`page.evaluate` 读 `localStorage['auth-storage'].state.accessToken`）后，用 `page.request.{post,put,delete}` + `Authorization: Bearer` 直接调 `/api/v1/brand/*` 建/改/清测试数据（建门店、建员工并 `location_assignments` 一次派店、清任职）。比纯 UI 点选快且稳，UI 只留"被测断言"那步。请求走 :3002 经 Next rewrite 代理到后端，无需直连 :8081。
+- **CreateStaffInput 支持内联 `location_assignments`**：建员工时一并 `[{location_id, assignment_type:'member', is_primary:true}]` 即派店，省一次 PUT location-assignments。
+- **后端改了 guard 必须重启/重建再跑 e2e**：旧 `go run` 二进制不含新逻辑，G1 会假失败（连续两批的坑，已成定式）。
