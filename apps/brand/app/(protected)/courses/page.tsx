@@ -1,270 +1,376 @@
 'use client'
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useBrandCourses, useCreateBrandCourse, useUpdateCourseStatus, useDeleteBrandCourse } from '@mini-schedule/api/brand'
+import { toast } from 'sonner'
+import { BookOpen, Plus } from 'lucide-react'
+import {
+  useBrandCourses,
+  useDeleteBrandCourse,
+  useUpdateBrandCourseStatus,
+} from '@mini-schedule/api/courses'
+import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
+import type {
+  CourseStatus,
+  CourseStatusFilter,
+  CourseTemplateListItem,
+} from '@mini-schedule/types'
 import { Button } from '@/components/ui/button'
+import { Hint } from '@/components/ui/hint'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ProtectedLayout } from '@/components/layout/protected-layout'
-import { getBackofficePagination, getBackofficePaginationLabel } from '@mini-schedule/admin-system/models/pagination'
-import type { CourseType, CourseDifficulty, Course } from '@mini-schedule/types'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { CourseFormDialog } from '@/components/courses/course-form-dialog'
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 
-const createCourseSchema = z.object({
-  title: z.string().min(2, '标题至少 2 个字符'),
-  description: z.string().optional(),
-  cover_url: z.string().url('请输入有效的 URL').optional().or(z.literal('')),
-  type: z.enum(['strength', 'cardio', 'flexibility', 'hiit']),
-  difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
-  duration_min: z.coerce.number().min(1, '时长必须大于 0'),
-})
+const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
 
-type CreateCourseForm = z.infer<typeof createCourseSchema>
-
-const typeLabels: Record<CourseType, string> = {
-  strength: '力量训练',
-  cardio: '有氧训练',
-  flexibility: '柔韧性训练',
-  hiit: '高强度间歇',
-}
-
-const difficultyLabels: Record<CourseDifficulty, string> = {
-  beginner: '入门',
-  intermediate: '进阶',
-  advanced: '高级',
-}
-
-const statusLabels: Record<string, string> = {
+const STATUS_LABELS: Record<CourseStatus, string> = {
   draft: '草稿',
   published: '已发布',
   archived: '已归档',
 }
 
-const statusColors: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-800',
+const STATUS_BADGE: Record<CourseStatus, string> = {
+  draft: 'bg-slate-100 text-slate-700',
   published: 'bg-green-100 text-green-800',
-  archived: 'bg-red-100 text-red-800',
+  archived: 'bg-amber-100 text-amber-800',
 }
 
 export default function CoursesPage() {
+  const { has } = usePermissions()
+  const canCreate = has(PERMISSIONS.COURSE_CREATE)
+  const canEdit = has(PERMISSIONS.COURSE_EDIT)
+  const canDelete = has(PERMISSIONS.COURSE_DELETE)
+
   const [page, setPage] = useState(1)
+  const [pageSize] = useState(20)
+  const [statusFilter, setStatusFilter] = useState<CourseStatusFilter>('all')
+  const [q, setQ] = useState('')
+
   const [dialogOpen, setDialogOpen] = useState(false)
-  const { data, isLoading } = useBrandCourses(page, 20) as {
-    data: { items: Course[]; total: number; page: number; page_size: number } | undefined
-    isLoading: boolean
-  }
-  const createMutation = useCreateBrandCourse()
-  const statusMutation = useUpdateCourseStatus()
+  const [deleteTarget, setDeleteTarget] =
+    useState<CourseTemplateListItem | null>(null)
+
+  const listQuery = useBrandCourses({
+    page,
+    page_size: pageSize,
+    status: statusFilter,
+    q: q.trim() || undefined,
+  })
+  const statusMutation = useUpdateBrandCourseStatus()
   const deleteMutation = useDeleteBrandCourse()
-  const pagination = getBackofficePagination({
-    page: data?.page ?? page,
-    totalItems: data?.total,
-    pageSize: data?.page_size,
-  })
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<CreateCourseForm>({
-    resolver: zodResolver(createCourseSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      cover_url: '',
-      duration_min: 30,
-    },
-  })
+  const items = listQuery.data?.items ?? []
+  const total = listQuery.data?.total ?? 0
+  const totalPages = useMemo(
+    () => (total ? Math.max(1, Math.ceil(total / pageSize)) : 1),
+    [total, pageSize],
+  )
 
-  const onSubmit = async (data: CreateCourseForm) => {
-    await createMutation.mutateAsync(data)
-    reset()
-    setDialogOpen(false)
+  async function changeStatus(
+    course: CourseTemplateListItem,
+    status: CourseStatus,
+  ) {
+    try {
+      await statusMutation.mutateAsync({ id: course.id, status })
+      toast.success(
+        status === 'published'
+          ? '课程已发布'
+          : status === 'archived'
+            ? '课程已归档'
+            : '课程已转为草稿',
+      )
+    } catch (e) {
+      toast.error(e instanceof ApiErrorClass ? e.message : '操作失败，请重试')
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    try {
+      await deleteMutation.mutateAsync(deleteTarget.id)
+      toast.success('课程模板已删除')
+      setDeleteTarget(null)
+    } catch (e) {
+      if (e instanceof ApiErrorClass) {
+        switch (e.code) {
+          case ErrorCodes.COURSE_IN_USE:
+            toast.error('该课程仍有已排场次，请先取消后再删除')
+            break
+          case ErrorCodes.COURSE_NOT_FOUND:
+            toast.error('课程不存在或已删除')
+            setDeleteTarget(null)
+            break
+          default:
+            toast.error(e.message || '删除失败，请重试')
+        }
+      } else {
+        toast.error('删除失败，请重试')
+      }
+    }
   }
 
   return (
-    <ProtectedLayout>
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">课程管理</h1>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>创建课程</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-xl">
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <DialogHeader>
-                  <DialogTitle>创建课程</DialogTitle>
-                  <DialogDescription>填写课程信息以发布新课程</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">标题</Label>
-                    <Input id="title" {...register('title')} />
-                    {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">描述</Label>
-                    <Textarea id="description" rows={3} {...register('description')} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>类型</Label>
-                      <Select onValueChange={(v) => setValue('type', v as CourseType)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="选择类型" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(typeLabels).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>难度</Label>
-                      <Select onValueChange={(v) => setValue('difficulty', v as CourseDifficulty)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="选择难度" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(difficultyLabels).map(([k, v]) => (
-                            <SelectItem key={k} value={k}>
-                              {v}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.difficulty && <p className="text-sm text-destructive">{errors.difficulty.message}</p>}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration_min">时长（分钟）</Label>
-                    <Input id="duration_min" type="number" {...register('duration_min')} />
-                    {errors.duration_min && <p className="text-sm text-destructive">{errors.duration_min.message}</p>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cover_url">封面 URL</Label>
-                    <Input id="cover_url" placeholder="https://..." {...register('cover_url')} />
-                    {errors.cover_url && <p className="text-sm text-destructive">{errors.cover_url.message}</p>}
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                    取消
-                  </Button>
-                  <Button type="submit" disabled={createMutation.isPending}>
-                    {createMutation.isPending ? '创建中...' : '创建'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+    <div className="space-y-6 p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">课程模板</h1>
+          <p className="text-sm text-muted-foreground">
+            课程模板用于排课。发布后方可在「排课」中创建场次。
+          </p>
         </div>
+        <Hint content={canCreate ? undefined : PERMISSION_DENIED_TOOLTIP}>
+          <Button
+            onClick={() => setDialogOpen(true)}
+            disabled={!canCreate}
+            data-testid="course-create-button"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            新增课程
+          </Button>
+        </Hint>
+      </div>
 
-        {isLoading ? (
-          <p className="text-muted-foreground">加载中...</p>
-        ) : !data?.items.length ? (
-          <p className="text-muted-foreground">暂无课程</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <Input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value)
+            setPage(1)
+          }}
+          placeholder="搜索课程名称"
+          className="w-full sm:w-56"
+          data-testid="course-search"
+        />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">状态</span>
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v as CourseStatusFilter)
+              setPage(1)
+            }}
+          >
+            <SelectTrigger className="w-32" data-testid="course-status-filter">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部</SelectItem>
+              <SelectItem value="draft">草稿</SelectItem>
+              <SelectItem value="published">已发布</SelectItem>
+              <SelectItem value="archived">已归档</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div
+        className="rounded-lg border border-slate-200 bg-white"
+        data-testid="courses-table"
+      >
+        {listQuery.isLoading ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            加载中...
+          </p>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              暂无课程模板，点击右上角“新增课程”创建第一个课程
+            </p>
+          </div>
         ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>标题</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>难度</TableHead>
-                  <TableHead>时长</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.items.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-mono text-sm">{c.id}</TableCell>
-                    <TableCell className="font-medium">{c.title}</TableCell>
-                    <TableCell>{typeLabels[c.type] ?? c.type}</TableCell>
-                    <TableCell>{difficultyLabels[c.difficulty]}</TableCell>
-                    <TableCell>{c.duration_min} 分钟</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusColors[c.status]}`}>{statusLabels[c.status]}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Link href={`/courses/${c.id}`} className="text-primary hover:underline text-sm">
-                          查看
-                        </Link>
-                        {c.status === 'draft' && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>课程</TableHead>
+                <TableHead>分类</TableHead>
+                <TableHead>级别</TableHead>
+                <TableHead>时长/容量</TableHead>
+                <TableHead>可用门店</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items.map((course) => (
+                <TableRow
+                  key={course.id}
+                  data-testid="course-row"
+                  data-title={course.title}
+                >
+                  <TableCell className="font-medium">
+                    <Link
+                      href={`/courses/${course.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {course.title}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {course.categories.length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        course.categories.map((cat) => (
+                          <span
+                            key={cat.id}
+                            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700"
+                          >
+                            <span
+                              className="inline-block h-2 w-2 rounded-full"
+                              style={{ backgroundColor: cat.color ?? '#cbd5e1' }}
+                            />
+                            {cat.name}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {course.level_label || '—'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {course.duration_min} 分钟 · {course.default_capacity} 人
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {course.available_location_count} 家
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[course.status]}`}
+                      data-testid="course-status-badge"
+                    >
+                      {STATUS_LABELS[course.status]}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-3 text-sm">
+                      {course.status !== 'published' ? (
+                        <Hint
+                          content={canEdit ? undefined : PERMISSION_DENIED_TOOLTIP}
+                        >
                           <button
-                            className="text-green-600 hover:underline text-sm"
-                            onClick={() =>
-                              statusMutation.mutate({
-                                id: c.id,
-                                status: 'published',
-                              })
-                            }
+                            type="button"
+                            className="text-green-700 hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                            disabled={!canEdit || statusMutation.isPending}
+                            onClick={() => changeStatus(course, 'published')}
+                            data-testid={`course-publish-${course.id}`}
                           >
                             发布
                           </button>
-                        )}
-                        {c.status === 'published' && (
+                        </Hint>
+                      ) : (
+                        <Hint
+                          content={canEdit ? undefined : PERMISSION_DENIED_TOOLTIP}
+                        >
                           <button
-                            className="text-amber-600 hover:underline text-sm"
-                            onClick={() =>
-                              statusMutation.mutate({
-                                id: c.id,
-                                status: 'archived',
-                              })
-                            }
+                            type="button"
+                            className="text-amber-700 hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                            disabled={!canEdit || statusMutation.isPending}
+                            onClick={() => changeStatus(course, 'archived')}
+                            data-testid={`course-archive-${course.id}`}
                           >
-                            下架
+                            归档
                           </button>
-                        )}
+                        </Hint>
+                      )}
+                      <Link
+                        href={`/courses/${course.id}`}
+                        className="text-primary hover:underline"
+                        data-testid={`course-detail-${course.id}`}
+                      >
+                        详情
+                      </Link>
+                      <Hint
+                        content={canDelete ? undefined : PERMISSION_DENIED_TOOLTIP}
+                      >
                         <button
-                          className="text-destructive hover:underline text-sm"
-                          onClick={() => {
-                            if (confirm('确定删除此课程？')) {
-                              deleteMutation.mutate(c.id)
-                            }
-                          }}
+                          type="button"
+                          className="text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                          disabled={!canDelete}
+                          onClick={() => setDeleteTarget(course)}
+                          data-testid={`course-delete-${course.id}`}
                         >
                           删除
                         </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">{getBackofficePaginationLabel(pagination)}</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={!pagination.canGoPrevious} onClick={() => setPage((p) => p - 1)}>
-                  上一页
-                </Button>
-                <Button variant="outline" size="sm" disabled={!pagination.canGoNext} onClick={() => setPage((p) => p + 1)}>
-                  下一页
-                </Button>
-              </div>
-            </div>
-          </>
+                      </Hint>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
-    </ProtectedLayout>
+
+      {totalPages > 1 ? (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            共 {total} 个课程 · 第 {page} / {totalPages} 页
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              上一页
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              下一页
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <CourseFormDialog
+        open={dialogOpen}
+        initial={null}
+        onOpenChange={setDialogOpen}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="删除该课程模板？"
+        description={
+          deleteTarget ? (
+            <span>
+              将删除课程「
+              <span className="font-medium">{deleteTarget.title}</span>
+              」。若已有排课场次将无法删除。
+            </span>
+          ) : null
+        }
+        confirmText="删除"
+        destructive
+        loading={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
+    </div>
   )
 }
