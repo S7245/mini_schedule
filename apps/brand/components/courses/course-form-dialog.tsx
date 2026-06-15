@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -63,6 +63,8 @@ export function CourseFormDialog({
   const [apiError, setApiError] = useState<string | null>(null)
   const [categoryIds, setCategoryIds] = useState<number[]>([])
   const [locationIds, setLocationIds] = useState<number[]>([])
+  // create 模式只在打开时自动全选一次，之后尊重用户取消勾选（不再回填）。
+  const didDefaultLocations = useRef(false)
 
   const isEdit = Boolean(initial)
   const pending = createMutation.isPending || updateMutation.isPending
@@ -105,17 +107,18 @@ export function CourseFormDialog({
       show_in_mini_program: initial?.show_in_mini_program ?? true,
     })
     setCategoryIds(initial?.category_ids ?? [])
-    // create mode: default to all active locations selected (matches backend default).
     setLocationIds(initial?.available_location_ids ?? [])
-  }, [open, initial, reset])
+    didDefaultLocations.current = isEdit // edit 模式不自动全选
+  }, [open, initial, reset, isEdit])
 
-  // In create mode, once locations load, default-select all active ones.
+  // create 模式：门店加载完成后，一次性默认全选；之后用户可自由取消勾选，不再回填。
   useEffect(() => {
-    if (!open || isEdit) return
-    if (locationIds.length === 0 && locations.length > 0) {
+    if (!open || didDefaultLocations.current) return
+    if (locations.length > 0) {
       setLocationIds(locations.map((l) => l.id))
+      didDefaultLocations.current = true
     }
-  }, [open, isEdit, locations, locationIds.length])
+  }, [open, locations])
 
   function toggle(list: number[], id: number): number[] {
     return list.includes(id) ? list.filter((x) => x !== id) : [...list, id]
