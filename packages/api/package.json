@@ -17,6 +17,9 @@
     "./staff": "./src/staff.ts",
     "./roles": "./src/roles.ts",
     "./instructor": "./src/instructor.ts",
+    "./course-categories": "./src/course-categories.ts",
+    "./courses": "./src/courses.ts",
+    "./class-sessions": "./src/class-sessions.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {

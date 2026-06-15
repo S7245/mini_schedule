@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { http } from './client'
 import type {
   InstructorProfile,
+  SchedulableInstructor,
   UpsertInstructorProfileInput,
 } from '@mini-schedule/types'
 import { onboardingQueryKeys } from './onboarding'
@@ -12,6 +13,30 @@ import { staffQueryKeys, type StaffId } from './staff'
 export const instructorQueryKeys = {
   byStaff: (staffId: StaffId | null) =>
     ['brand-staff-instructor', staffId] as const,
+  schedulable: () => ['brand-instructors-schedulable'] as const,
+}
+
+// ─── Schedulable instructor list (Batch 11 — create-session dialog) ──────────
+//
+// ASSUMPTION (backend must match): GET /api/v1/brand/instructors?schedulable=true
+// returns { items: [{ id, display_name, status, is_schedulable }] } where `id`
+// is the instructor_profile_id used by POST /class-sessions. The staff list
+// endpoint does not expose instructor_profile_id, so this dedicated read is
+// required to populate the instructor selector.
+
+export function listSchedulableInstructors(silent = false) {
+  return http.get<{ items: SchedulableInstructor[] }>(
+    '/api/v1/brand/instructors?schedulable=true',
+    { silent },
+  )
+}
+
+export function useSchedulableInstructors(enabled = true) {
+  return useQuery<{ items: SchedulableInstructor[] }>({
+    queryKey: instructorQueryKeys.schedulable(),
+    queryFn: () => listSchedulableInstructors(true),
+    enabled,
+  })
 }
 
 // ─── Raw API calls ───────────────────────────────────────
