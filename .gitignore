@@ -13,3 +13,7 @@ out/
 # Electron build artifacts
 apps/admin/electron/dist/
 apps/admin/dist-electron/
+
+# Playwright
+test-results/
+playwright-report/
