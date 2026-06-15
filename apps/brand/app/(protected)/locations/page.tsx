@@ -11,6 +11,7 @@ import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
 import type { Location, LocationStatusFilter } from '@mini-schedule/types'
 import { Button } from '@/components/ui/button'
 import { Hint } from '@/components/ui/hint'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -52,12 +53,18 @@ export default function LocationsPage() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
   const [statusFilter, setStatusFilter] = useState<LocationStatusFilter>('all')
+  const [q, setQ] = useState('')
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Location | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Location | null>(null)
 
-  const listQuery = useBrandLocations(page, pageSize, statusFilter)
+  const listQuery = useBrandLocations(
+    page,
+    pageSize,
+    statusFilter,
+    q.trim() || undefined,
+  )
   const deleteMutation = useDeleteBrandLocation()
 
   const items = listQuery.data?.items ?? []
@@ -128,6 +135,16 @@ export default function LocationsPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <Input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value)
+            setPage(1)
+          }}
+          placeholder="搜索门店名称"
+          className="w-full sm:w-56"
+          data-testid="location-search"
+        />
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">状态</span>
           <Select

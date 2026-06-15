@@ -14,8 +14,12 @@ import { onboardingQueryKeys } from './onboarding'
 export type LocationId = number | string
 
 export const locationQueryKeys = {
-  list: (page: number, pageSize: number, status: LocationStatus | 'all') =>
-    ['brand-locations', page, pageSize, status] as const,
+  list: (
+    page: number,
+    pageSize: number,
+    status: LocationStatus | 'all',
+    q?: string,
+  ) => ['brand-locations', page, pageSize, status, q] as const,
   detail: (id: LocationId | null) => ['brand-location', id] as const,
 }
 
@@ -25,6 +29,7 @@ export interface ListLocationsParams {
   page?: number
   page_size?: number
   status?: LocationStatus | 'all'
+  q?: string
 }
 
 export function listLocations(params: ListLocationsParams = {}, silent = false) {
@@ -32,6 +37,9 @@ export function listLocations(params: ListLocationsParams = {}, silent = false) 
   search.set('page', String(params.page ?? 1))
   search.set('page_size', String(params.page_size ?? 20))
   search.set('status', params.status ?? 'all')
+  if (params.q) {
+    search.set('q', params.q)
+  }
   return http.get<PageResponse<Location>>(
     `/api/v1/brand/locations?${search.toString()}`,
     { silent },
@@ -76,10 +84,11 @@ export function useBrandLocations(
   page = 1,
   pageSize = 20,
   status: LocationStatus | 'all' = 'all',
+  q?: string,
 ) {
   return useQuery<PageResponse<Location>>({
-    queryKey: locationQueryKeys.list(page, pageSize, status),
-    queryFn: () => listLocations({ page, page_size: pageSize, status }, true),
+    queryKey: locationQueryKeys.list(page, pageSize, status, q),
+    queryFn: () => listLocations({ page, page_size: pageSize, status, q }, true),
   })
 }
 
