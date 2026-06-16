@@ -201,6 +201,7 @@ export default function SchedulePage() {
                 <TableHead>时间</TableHead>
                 <TableHead>课程</TableHead>
                 <TableHead>门店</TableHead>
+                <TableHead>资源</TableHead>
                 <TableHead>教练</TableHead>
                 <TableHead>容量</TableHead>
                 <TableHead>状态</TableHead>
@@ -216,6 +217,9 @@ export default function SchedulePage() {
                   <TableCell>{s.course_title}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {s.location_name}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {s.resource_name || '—'}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {s.instructor_name}

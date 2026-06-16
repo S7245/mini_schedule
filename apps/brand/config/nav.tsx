@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Boxes,
   CalendarClock,
   Contact,
   Dumbbell,
@@ -28,6 +29,11 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/locations',
     label: '门店管理',
     icon: <Store className="h-4 w-4" />,
+  },
+  {
+    href: '/resources',
+    label: '资源管理',
+    icon: <Boxes className="h-4 w-4" />,
   },
   {
     href: '/roles',

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useCreateClassSession } from '@mini-schedule/api/class-sessions'
 import { useBrandCourses } from '@mini-schedule/api/courses'
 import { useBrandLocations } from '@mini-schedule/api/locations'
+import { useBrandLocationResources } from '@mini-schedule/api/location-resources'
 import { useSchedulableInstructors } from '@mini-schedule/api/instructor'
 import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
 import {
@@ -38,19 +39,31 @@ export function SessionCreateDialog({
   const [locationId, setLocationId] = useState('')
   const [courseId, setCourseId] = useState('')
   const [instructorId, setInstructorId] = useState('')
+  const [resourceId, setResourceId] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState(60)
   const [capacity, setCapacity] = useState(8)
   const [apiError, setApiError] = useState<string | null>(null)
 
+  // 资源按所选门店级联拉取（仅 active）。未选门店时不查询。
+  const resourcesQuery = useBrandLocationResources(
+    { location_id: Number(locationId) || 0, status: 'active', page_size: 100 },
+    open && Boolean(locationId),
+  )
+
   const locations = locationsQuery.data?.items ?? []
   const courses = coursesQuery.data?.items ?? []
   const instructors = instructorsQuery.data?.items ?? []
+  const resources = resourcesQuery.data?.items ?? []
 
   const selectedCourse = useMemo(
     () => courses.find((c) => String(c.id) === courseId),
     [courses, courseId],
+  )
+  const selectedResource = useMemo(
+    () => resources.find((r) => String(r.id) === resourceId),
+    [resources, resourceId],
   )
 
   useEffect(() => {
@@ -58,12 +71,18 @@ export function SessionCreateDialog({
     setLocationId('')
     setCourseId('')
     setInstructorId('')
+    setResourceId('')
     setDate('')
     setTime('09:00')
     setDuration(60)
     setCapacity(8)
     setApiError(null)
   }, [open])
+
+  // 切换门店时清空已选资源（资源属门店）。
+  useEffect(() => {
+    setResourceId('')
+  }, [locationId])
 
   // When a course is picked, default duration/capacity from its template.
   useEffect(() => {
@@ -73,11 +92,22 @@ export function SessionCreateDialog({
     }
   }, [selectedCourse])
 
+  // 选中资源后，容量默认填资源容量（用户仍可改；后端最终以显式>资源>课程为序）。
+  useEffect(() => {
+    if (selectedResource) {
+      setCapacity(selectedResource.capacity)
+    }
+  }, [selectedResource])
+
   function mapApiError(err: unknown): string {
     if (err instanceof ApiErrorClass) {
       switch (err.code) {
         case ErrorCodes.SESSION_INSTRUCTOR_CONFLICT:
           return '该教练在此时段已有排课，请调整时间或教练'
+        case ErrorCodes.SESSION_RESOURCE_CONFLICT:
+          return '该资源在此时段已被占用，请调整时间或资源'
+        case ErrorCodes.RESOURCE_NOT_AVAILABLE:
+          return '所选资源已停用，请改选其他资源或不绑定'
         case ErrorCodes.COURSE_LOCATION_UNAVAILABLE:
           return '该课程在所选门店不可排课，请到课程模板调整可用门店'
         case ErrorCodes.COURSE_NOT_ACTIVE:
@@ -111,6 +141,7 @@ export function SessionCreateDialog({
         course_id: Number(courseId),
         location_id: Number(locationId),
         instructor_profile_id: Number(instructorId),
+        location_resource_id: resourceId ? Number(resourceId) : null,
         starts_at: starts.toISOString(),
         ends_at: ends.toISOString(),
         capacity,
@@ -193,6 +224,30 @@ export function SessionCreateDialog({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="session-resource">资源（可选）</Label>
+              <select
+                id="session-resource"
+                value={resourceId}
+                onChange={(e) => setResourceId(e.target.value)}
+                disabled={!locationId}
+                className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm disabled:bg-slate-50 disabled:text-muted-foreground"
+                data-testid="session-field-resource"
+              >
+                <option value="">不绑定资源</option>
+                {resources.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}（容量 {r.capacity}）
+                  </option>
+                ))}
+              </select>
+              {locationId && resources.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  该门店暂无启用资源，可在「资源管理」中添加。
+                </p>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

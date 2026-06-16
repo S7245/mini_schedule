@@ -136,6 +136,54 @@ export interface UpdateLocationStatusInput {
   status: LocationStatus
 }
 
+// ─── Location Resource (Batch 12a) ───────────────────────
+
+export type LocationResourceStatus = 'active' | 'inactive'
+export type LocationResourceStatusFilter = LocationResourceStatus | 'all'
+export type LocationResourceType =
+  | 'classroom'
+  | 'venue'
+  | 'online'
+  | 'equipment'
+  | 'other'
+
+export interface LocationResource {
+  id: number
+  brand_id: number
+  location_id: number
+  location_name: string
+  name: string
+  type: LocationResourceType
+  capacity: number
+  status: LocationResourceStatus
+  remark: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateLocationResourceInput {
+  location_id: number
+  name: string
+  type: LocationResourceType
+  capacity?: number
+  remark?: string
+}
+
+export interface UpdateLocationResourceInput {
+  name?: string
+  type?: LocationResourceType
+  capacity?: number
+  status?: LocationResourceStatus
+  remark?: string
+}
+
+export interface LocationResourceListQuery {
+  location_id: number
+  status?: LocationResourceStatusFilter
+  page?: number
+  page_size?: number
+}
+
 // ─── User ────────────────────────────────────────────────
 
 export interface BrandUser {
@@ -323,6 +371,8 @@ export interface ClassSessionListItem {
   location_name: string
   instructor_profile_id: number
   instructor_name: string
+  location_resource_id: number | null
+  resource_name: string
   starts_at: string
   ends_at: string
   capacity: number
@@ -347,6 +397,8 @@ export interface ClassSession {
   capacity: number
   booked_count: number
   waitlist_limit: number
+  location_resource_id: number | null
+  resource_name: string
   status: ClassSessionStatus
   cancel_reason: string | null
   cancelled_at: string | null
@@ -358,6 +410,7 @@ export interface CreateClassSessionInput {
   course_id: number
   location_id: number
   instructor_profile_id: number
+  location_resource_id?: number | null
   starts_at: string
   ends_at: string
   capacity?: number

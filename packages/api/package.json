@@ -20,6 +20,7 @@
     "./course-categories": "./src/course-categories.ts",
     "./courses": "./src/courses.ts",
     "./class-sessions": "./src/class-sessions.ts",
+    "./location-resources": "./src/location-resources.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {

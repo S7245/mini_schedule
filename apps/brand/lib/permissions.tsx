@@ -51,6 +51,12 @@ export const PERMISSIONS = {
   SESSION_VIEW: 'session.view',
   SESSION_CREATE: 'session.create',
   SESSION_CANCEL: 'session.cancel',
+
+  // Location Resource (Batch 12a)
+  LOCATION_RESOURCE_VIEW: 'location_resource.view',
+  LOCATION_RESOURCE_CREATE: 'location_resource.create',
+  LOCATION_RESOURCE_EDIT: 'location_resource.edit',
+  LOCATION_RESOURCE_DELETE: 'location_resource.delete',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
