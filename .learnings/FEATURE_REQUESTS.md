@@ -134,3 +134,11 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - **UpdateStatus 改 gate location.toggle_status**：现 location.edit；migration seed 的专用 `location.toggle_status` 一直闲置。改时前端 LocationStatusToggle 也要从 LOCATION_EDIT 换到新常量。注意自定义角色若只给 edit 未给 toggle_status 会失去切换能力（行为变化）。
 - **后端 location list 加 name 搜索**：现仅 status 筛选 + 分页（前端管理页无搜索框）。门店多时需要 `q` 模糊搜索（参考 staff list 的 q 参数）。
 - **e2e 补「店长权限门」用例**：断言 location_manager（13900139001，仅 location.view 无 create/edit/delete）在 /locations 上新建/编辑/删除按钮全 disabled + Hint。
+
+## 2026-06-16 Batch 11 验收期新增
+
+- 排课弹窗课程下拉目前列全部已发布课程，未按所选门店的可用门店过滤（靠后端 COURSE_LOCATION_UNAVAILABLE 兜底 + inline 报错）；可选优化：选门店后只列该门店可用课程。
+- instructor 下拉空态兜底文案（见 ERRORS）。
+- 课程分类无删除入口（后端无 DELETE，只停用）；若后端补 DELETE 再加前端删除 + CATEGORY_IN_USE 处理。
+- /schedule 取消场次未带原因输入（后端 cancel_reason 可选，前端走 ConfirmDialog 直接取消）；需要时加原因 textarea。
+- /schedule 缺日期范围筛选（后端已支持 from/to），当前仅门店+状态筛选。

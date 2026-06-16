@@ -235,3 +235,14 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 - app/admin 水合竞态：两端 protected 守卫（app layout + AdminGuard）已接 `useAuthHydrated`，与 brand 一致。三端 deep-link/刷新不再瞬闪 /login。
 - location list name 搜索：前端门店页加搜索框 + `useBrandLocations(page,pageSize,status,q?)`，后端 server-side ILIKE 过滤。
 - 只读权限门 e2e 已落 `e2e/batch-10-location-permission-gate.spec.ts`。
+
+## 2026-06-16 Batch 11 — 课程模板 + 排课前端
+
+### 页面/弹窗照搬 locations + course-categories 模板
+新管理页（/courses /schedule）全程 mirror /locations：`usePermissions` + `has(PERMISSIONS.X)` 算 canCreate/canEdit/canDelete → 写按钮 `disabled` + `Hint` tooltip；DataTable + 状态 Select + 搜索 Input + 分页；行操作 + ConfirmDialog 删除/取消；mutation hook `invalidateQueries(refetchType:'all')` + onboarding status 失效。表单弹窗照搬 category-form-dialog（RHF+zod，create/edit 用 `initial` 区分，`useEffect([open,initial])` reset）。data-testid 钩子按既有命名（`x-create-button` / `x-row` / `x-field-y` / `x-submit`）给 e2e。
+
+### 「打开时默认全选」用 ref 一次性，别 keying on length
+课程 dialog 默认全选可用门店：effect 若依赖 `locationIds.length`，create 模式取消最后一个会触发再回填，用户永远删不掉。改 `useRef(didDefault)` 一次性默认；edit 模式直接置 true（用 initial 回填，不默认）。规则：**“打开时初始化一次”的副作用用 ref 守卫，不要 keying on 会被用户改动的派生 length**。
+
+### 时间输入 → RFC3339 给后端
+排课 `new Date(`${date}T${time}`)`（本地时区解析）→ `.toISOString()`（UTC Z）；ends = starts + duration*60000。后端按 RFC3339 解析转 UTC 校验 starts>now。本地→UTC 由浏览器完成，无需手拼时区。

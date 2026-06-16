@@ -114,3 +114,16 @@
 - **所有 DELETE 静默失败（已修 `fe27ace`）**：`client.ts` 无条件 `response.json()`，后端 204 空 body 抛 SyntaxError，请求 reject → 弹窗不关 + toast「删除失败」，但后端实际已删。修：先 text() 判空。Pending exposure：任何返 204/空 body 的接口（未来 PUT/POST 若返 204）都曾受影响，全线受益。
 - **硬 URL 直达 protected route 被弹走（已修 `5b5001d`）**：zustand persist 未水合 → 守卫误判未登录。修：useAuthHydrated 门控。Pending exposure：**app/admin 两端 protected layout 大概率同款竞态，本批未改**。
 - **prod build 报 `Cannot find module 'react'`（已修）**：packages/api 新增直接 react import 但未声明依赖；dev/e2e 不暴露（dev 不全量 typecheck）。修：package.json 补 react peer+dev。教训：验收流程加一步 `pnpm --filter <app> build`。
+
+## 2026-06-16 Batch 11
+
+### 排课教练下拉恒空（根因在后端，但前端先暴露）
+`packages/api/src/instructor.ts` 的 `useSchedulableInstructors` 调 `GET /instructors?schedulable=true`，后端 Batch 11 原未实现该路由 → 404 → 下拉空 → 无法排课。后端补端点后恢复（详见 backend `.learnings/ERRORS.md`）。前端侧教训：api client 写 `ASSUMPTION (backend must match)` 的端点，要么后端同批落地，要么前端别静默依赖——下拉空时给「暂无可排课教练，请先到员工管理启用教练档案」之类兜底文案（本批已对 courses/locations 空态做了，instructor 下拉可补）。
+
+### 课程 dialog 默认全选门店回填 bug（code-review，commit ef8f974）
+见 LEARNINGS「打开时默认全选用 ref」。effect keying on locationIds.length → create 取消最后一个被自动回填，删不掉。修：useRef 一次性默认。
+
+### 复跑环境踩坑（务必照做）
+- 前端 filter 用**包名** `pnpm dev --filter=@mini-schedule/brand`；`--filter=brand` 报 "No package found"。
+- stale `.next`：登录点击后不跳转、URL 变 `/login?phone=…&password=…`（DevTools 见 `_next/static/*` 404 → 不水合 → 表单退化成原生 GET 提交）。修：杀前端 → `rm -rf apps/brand/.next` → 重启 → 先 `curl /login` 预热。
+- 冷编译：跑 e2e 前 `curl` 预热 /login 和目标页，避免 beforeAll 30s 超时。
