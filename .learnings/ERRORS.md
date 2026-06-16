@@ -127,3 +127,11 @@
 - 前端 filter 用**包名** `pnpm dev --filter=@mini-schedule/brand`；`--filter=brand` 报 "No package found"。
 - stale `.next`：登录点击后不跳转、URL 变 `/login?phone=…&password=…`（DevTools 见 `_next/static/*` 404 → 不水合 → 表单退化成原生 GET 提交）。修：杀前端 → `rm -rf apps/brand/.next` → 重启 → 先 `curl /login` 预热。
 - 冷编译：跑 e2e 前 `curl` 预热 /login 和目标页，避免 beforeAll 30s 超时。
+
+## 2026-06-16 Batch 12a
+
+### 新增 api 子模块忘记登记 package.json exports → 解析失败
+见 LEARNINGS。新建 `src/location-resources.ts` 必须同步 `packages/api/package.json` 的 `exports`，否则 `pnpm build` 时 `@mini-schedule/api/location-resources` 模块解析不到。本批落地时一并加了，未踩坑，但作为新 api client 的固定步骤记录。
+
+### ClassSession 类型加 location_resource_id/resource_name 要同步 list+detail 两个 interface
+`ClassSessionListItem` 和 `ClassSession` 是两个独立 interface，后端两个端点都返了 resource_name，前端两个 type 都要补，否则 /schedule 表读 `s.resource_name` 类型报错或详情缺字段。

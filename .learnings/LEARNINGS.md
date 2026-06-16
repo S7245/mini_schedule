@@ -246,3 +246,17 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 
 ### 时间输入 → RFC3339 给后端
 排课 `new Date(`${date}T${time}`)`（本地时区解析）→ `.toISOString()`（UTC Z）；ends = starts + duration*60000。后端按 RFC3339 解析转 UTC 校验 starts>now。本地→UTC 由浏览器完成，无需手拼时区。
+
+## 2026-06-16 Batch 12a — 资源管理前端 + 排课弹窗级联
+
+### 新 api client 必须在 packages/api/package.json 的 exports 里登记
+新建 `packages/api/src/location-resources.ts` 后，消费端 `import ... from '@mini-schedule/api/location-resources'` 解析不到，除非在 `package.json` `exports` map 加 `"./location-resources": "./src/location-resources.ts"`。每加一个 api 子模块都要同步这张表（class-sessions/course-categories 等都在）。
+
+### 级联下拉：父变子清 + 子选回填默认
+排课弹窗门店→资源级联：`useBrandLocationResources({location_id, status:'active'}, open && Boolean(locationId))`（enabled 双门：弹窗开 + 已选门店）；`useEffect(()=>setResourceId(''),[locationId])` 切门店清资源；选中资源后 `useEffect(()=>setCapacity(selectedResource.capacity),[selectedResource])` 容量回填（用户可改，后端最终按 显式>资源>课程）。「不绑定资源」用空 option，提交 `resourceId ? Number : null`。
+
+### 资源管理页门店筛选默认首个 active（一次性 ref-free 守卫）
+`/resources` 必须按门店看资源；`locationId` 初值 null，`useEffect` 在 `locations` 到位且 `locationId===null` 时设首个——条件里带 `locationId===null` 自然只跑一次，等价 ref 守卫。list query `enabled: locationId!==null`，避免 location_id=0 空查。
+
+### 删除确认弹窗 RESOURCE_IN_USE 保持打开（同 LOCATION_IN_USE 约定）
+删资源被场次/循环排课引用 → toast 提示 + ConfirmDialog 不关（不 setDeleting(null)），让用户先去取消场次；RESOURCE_NOT_FOUND 才关闭。镜像 Batch 9 门店删除。

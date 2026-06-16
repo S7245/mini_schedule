@@ -142,3 +142,9 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 课程分类无删除入口（后端无 DELETE，只停用）；若后端补 DELETE 再加前端删除 + CATEGORY_IN_USE 处理。
 - /schedule 取消场次未带原因输入（后端 cancel_reason 可选，前端走 ConfirmDialog 直接取消）；需要时加原因 textarea。
 - /schedule 缺日期范围筛选（后端已支持 from/to），当前仅门店+状态筛选。
+
+## 2026-06-16 Batch 12a 转移项
+
+- Batch 12b 循环排课前端：/schedule 加「循环排课」入口（grill 定 tabs 单场次/循环排课）+ recurring-create-dialog（周几多选+起止+时长+容量+可选资源）+ 生成结果展示（成功 N / 跳过 M + 冲突清单）+ recurring 列表/详情/非级联 cancel。
+- 排课/编辑场次时「所选资源已停用」提示（blueprint §20.5）。
+- 资源占用日历视图。
