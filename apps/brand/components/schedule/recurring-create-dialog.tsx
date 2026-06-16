@@ -121,9 +121,12 @@ export function RecurringCreateDialog({
   useEffect(() => {
     if (selectedCourse) {
       setDuration(selectedCourse.duration_min)
-      setCapacity(selectedCourse.default_capacity)
+      // 绑定了资源时不要用课程默认覆盖资源容量（优先级 资源 > 课程默认）。
+      if (!selectedResource) {
+        setCapacity(selectedCourse.default_capacity)
+      }
     }
-  }, [selectedCourse])
+  }, [selectedCourse, selectedResource])
 
   useEffect(() => {
     if (selectedResource) {
@@ -169,6 +172,14 @@ export function RecurringCreateDialog({
     }
     if (weekdays.length === 0) {
       setApiError('请至少选择一个星期几')
+      return
+    }
+    if (endMode === 'weeks' && (!repeatWeeks || repeatWeeks < 1)) {
+      setApiError('请填写重复周数')
+      return
+    }
+    if (endMode === 'date' && !endDate) {
+      setApiError('请选择结束日期')
       return
     }
     try {
