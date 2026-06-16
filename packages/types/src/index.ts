@@ -432,6 +432,75 @@ export interface ClassSessionListQuery {
   to?: string
 }
 
+// ─── Recurring Schedule (Batch 12b) ──────────────────────
+
+export type RecurringScheduleStatus = 'active' | 'cancelled' | 'completed'
+export type RecurringScheduleStatusFilter = RecurringScheduleStatus | 'all'
+
+/** weekday 0=周日 … 6=周六（与后端 time.Weekday 对齐）。 */
+export interface RecurringSchedule {
+  id: number
+  brand_id: number
+  location_id: number
+  location_name: string
+  location_resource_id: number | null
+  resource_name: string
+  course_id: number
+  course_title: string
+  instructor_profile_id: number
+  instructor_name: string
+  weekdays: number[]
+  start_date: string // YYYY-MM-DD
+  end_date: string // YYYY-MM-DD，空串=用 repeat_weeks
+  repeat_weeks: number | null
+  start_time: string // HH:mm
+  duration_min: number
+  capacity: number
+  status: RecurringScheduleStatus
+  session_count: number
+  created_at: string
+}
+
+export interface RecurringSkippedOccurrence {
+  date: string
+  start_time: string
+  reason: 'instructor_conflict' | 'resource_conflict'
+}
+
+export interface GenerateRecurringScheduleInput {
+  course_id: number
+  location_id: number
+  instructor_profile_id: number
+  location_resource_id?: number | null
+  weekdays: number[]
+  start_date: string
+  end_date?: string
+  repeat_weeks?: number | null
+  start_time: string
+  duration_min: number
+  capacity?: number
+}
+
+export interface GenerateRecurringScheduleResult {
+  recurring_schedule: RecurringSchedule
+  created_count: number
+  skipped_count: number
+  created: ClassSessionListItem[]
+  skipped: RecurringSkippedOccurrence[]
+}
+
+export interface RecurringScheduleDetail {
+  recurring_schedule: RecurringSchedule
+  sessions: ClassSessionListItem[]
+}
+
+export interface RecurringScheduleListQuery {
+  page?: number
+  page_size?: number
+  location_id?: number
+  status?: RecurringScheduleStatusFilter
+}
+
 /**
  * Schedulable instructor option for the create-session dialog.
  * Source: GET /api/v1/brand/instructors?schedulable=true (assumption — backend

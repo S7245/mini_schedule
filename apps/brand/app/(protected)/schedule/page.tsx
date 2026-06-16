@@ -31,7 +31,9 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { SessionCreateDialog } from '@/components/schedule/session-create-dialog'
+import { RecurringTab } from '@/components/schedule/recurring-tab'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { cn } from '@/lib/utils'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 
 const PERMISSION_DENIED_TOOLTIP = '权限不足，请联系管理员'
@@ -69,6 +71,7 @@ export default function SchedulePage() {
   const [statusFilter, setStatusFilter] =
     useState<ClassSessionStatusFilter>('all')
   const [locationFilter, setLocationFilter] = useState('all')
+  const [tab, setTab] = useState<'single' | 'recurring'>('single')
   const [createOpen, setCreateOpen] = useState(false)
   const [cancelTarget, setCancelTarget] = useState<ClassSessionListItem | null>(
     null,
@@ -115,13 +118,43 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight">排课</h1>
+        <p className="text-sm text-muted-foreground">
+          基于已发布课程模板创建单场次，或用循环排课批量生成。同一教练 / 资源同一时段不可重复。
+        </p>
+      </div>
+
+      <div className="flex gap-1 border-b border-slate-200">
+        {(
+          [
+            { key: 'single', label: '单场次' },
+            { key: 'recurring', label: '循环排课' },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={cn(
+              '-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors',
+              tab === t.key
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700',
+            )}
+            data-testid={`schedule-tab-${t.key}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'recurring' ? (
+        <RecurringTab />
+      ) : (
+        <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">排课</h1>
-          <p className="text-sm text-muted-foreground">
-            基于已发布课程模板创建单场次。同一教练同一时段不可重复排课。
-          </p>
-        </div>
+        <div />
         <Hint content={canCreate ? undefined : PERMISSION_DENIED_TOOLTIP}>
           <Button
             onClick={() => setCreateOpen(true)}
@@ -307,6 +340,8 @@ export default function SchedulePage() {
         onCancel={() => setCancelTarget(null)}
         onConfirm={confirmCancel}
       />
+        </>
+      )}
     </div>
   )
 }

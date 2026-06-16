@@ -21,6 +21,7 @@
     "./courses": "./src/courses.ts",
     "./class-sessions": "./src/class-sessions.ts",
     "./location-resources": "./src/location-resources.ts",
+    "./recurring-schedules": "./src/recurring-schedules.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {
