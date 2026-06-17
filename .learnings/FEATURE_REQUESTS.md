@@ -148,3 +148,9 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - Batch 12b 循环排课前端：/schedule 加「循环排课」入口（grill 定 tabs 单场次/循环排课）+ recurring-create-dialog（周几多选+起止+时长+容量+可选资源）+ 生成结果展示（成功 N / 跳过 M + 冲突清单）+ recurring 列表/详情/非级联 cancel。
 - 排课/编辑场次时「所选资源已停用」提示（blueprint §20.5）。
 - 资源占用日历视图。
+
+## 2026-06-17 Batch 12b 转移项
+
+- 学员预约批次前端（Booking）。
+- 循环排课详情切换不同 id 时的 loading 态可更精细（当前 react-query 缓存命中即时显示）。
+- /schedule 单场次表标记「来自循环排课」（需后端 list DTO 暴露 recurring_schedule_id）。

@@ -260,3 +260,20 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 
 ### 删除确认弹窗 RESOURCE_IN_USE 保持打开（同 LOCATION_IN_USE 约定）
 删资源被场次/循环排课引用 → toast 提示 + ConfirmDialog 不关（不 setDeleting(null)），让用户先去取消场次；RESOURCE_NOT_FOUND 才关闭。镜像 Batch 9 门店删除。
+
+## 2026-06-17 Batch 12b — 循环排课前端 + E2E 自动化坑
+
+### 单页多视图用轻量 state Tabs，不必引 Radix Tabs
+/schedule「单场次/循环排课」用 useState<'single'|'recurring'> + 两个按钮（border-b-2 active 态）切换，单场次内容包进 fragment 条件渲染，循环渲染 <RecurringTab/>。ui/ 无 Tabs 组件时这样最省，零新依赖。
+
+### 批量生成结果用「表单↔结果面板」同弹窗切换
+循环弹窗提交成功后 setResult(res) 切到结果面板（成功 N/跳过 M + 跳过清单），「完成」才关闭；全冲突(RECURRING_ALL_CONFLICT)读 err.data.skipped 内联展示（api-error 区 + 清单），非顶部 toast。
+
+### 自动填充优先级用「源守卫」而非纯 effect 覆盖
+容量默认：课程 effect 加 if(!selectedResource) 才用课程默认（资源优先）；deps 含 selectedResource 使清空资源后回退课程默认。否则「选资源→改课程」会被课程默认覆盖。
+
+### E2E（chrome-devtools）自动化坑——写进回归复跑要点
+- 周几复选框是 sr-only 隐藏 input，click/fill 点不到，需 el.click() 脚本触发。
+- 原生 select 要用 value setter + dispatch('change') 才能更新 React state。
+- 时间存 UTC：09:00 本地=01:00Z，按 starts_at 子串过滤会漏，需换算。
+- 部分 edge（XOR/越界/资源/权限/级联）前端 radio 已强制，走后端 API 直连验证更直接。

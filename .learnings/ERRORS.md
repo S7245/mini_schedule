@@ -135,3 +135,8 @@
 
 ### ClassSession 类型加 location_resource_id/resource_name 要同步 list+detail 两个 interface
 `ClassSessionListItem` 和 `ClassSession` 是两个独立 interface，后端两个端点都返了 resource_name，前端两个 type 都要补，否则 /schedule 表读 `s.resource_name` 类型报错或详情缺字段。
+
+## 2026-06-17 Batch 12b
+
+### eslint 无 react-hooks/exhaustive-deps 规则 → disable 注释反而报错
+本仓 eslint 未启用 react-hooks 插件，写 `// eslint-disable-next-line react-hooks/exhaustive-deps` 会报「Definition for rule not found」error。正确做法：把依赖如实写进 deps 数组（既有 dialog 都是这么做的），不要加 disable 注释。
