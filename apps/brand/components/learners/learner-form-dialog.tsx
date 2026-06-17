@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -89,11 +89,33 @@ export function LearnerFormDialog({
     reset({
       phone: initial?.phone ?? '',
       nickname: initial?.nickname ?? '',
-      primary_location_id: initial?.primary_location_id ?? defaultLocationId ?? 0,
+      // edit: 用学员当前主门店（可能为 null→0=未分配），不回退到列表筛选门店，
+      // 否则「编辑无主门店的学员」会把当前筛选门店静默写进去。create 才用 defaultLocationId。
+      primary_location_id: initial
+        ? (initial.primary_location_id ?? 0)
+        : (defaultLocationId ?? 0),
       learner_no: initial?.learner_no ?? '',
       remark: initial?.remark ?? '',
     })
   }, [open, initial, defaultLocationId, reset])
+
+  // 选项里并入学员当前主门店——即使它已停用（不在 active locations 里）也要可见，
+  // 否则 select 落不到该值会回退到「未分配」，保存时静默清空主门店。
+  const locationOptions = useMemo(() => {
+    if (
+      initial?.primary_location_id &&
+      !locations.some((l) => l.id === initial.primary_location_id)
+    ) {
+      return [
+        {
+          id: initial.primary_location_id,
+          name: `${initial.primary_location_name || '当前门店'}（已停用）`,
+        },
+        ...locations,
+      ]
+    }
+    return locations
+  }, [initial, locations])
 
   function toggleTag(id: number) {
     setSelectedTags((prev) =>
@@ -216,7 +238,7 @@ export function LearnerFormDialog({
                   data-testid="learner-field-location"
                 >
                   <option value={0}>未分配</option>
-                  {locations.map((l) => (
+                  {locationOptions.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.name}
                     </option>

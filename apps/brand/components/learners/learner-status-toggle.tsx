@@ -21,7 +21,12 @@ export function LearnerStatusToggle({ learner }: LearnerStatusToggleProps) {
   const { has } = usePermissions()
   const canFreeze = has(PERMISSIONS.LEARNER_FREEZE)
 
-  // 仅 active/frozen 之间切换（inactive 不在 13a 暴露）。
+  // 冻结/解冻只在 active↔frozen 之间。inactive（停用）学员不适用，隐藏入口，
+  // 避免误把 inactive 翻成 frozen（后端只校验目标态，不挡源态）。
+  if (learner.status === 'inactive') {
+    return null
+  }
+
   const isActive = learner.status !== 'frozen'
   const nextStatus = isActive ? 'frozen' : 'active'
   const actionLabel = isActive ? '冻结' : '解冻'

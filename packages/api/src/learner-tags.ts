@@ -62,6 +62,9 @@ function invalidateTags(queryClient: ReturnType<typeof useQueryClient>) {
     queryKey: ['brand-learner-tags'],
     refetchType: 'all',
   })
+  // 学员列表/详情内嵌的是标签快照（name/color），改名/改色后需刷新它们。
+  queryClient.invalidateQueries({ queryKey: ['brand-learners'], refetchType: 'all' })
+  queryClient.invalidateQueries({ queryKey: ['brand-learner'] })
 }
 
 export function useCreateLearnerTag() {
