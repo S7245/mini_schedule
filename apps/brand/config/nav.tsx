@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Store,
+  Tag,
   Tags,
   UsersRound,
 } from 'lucide-react'
@@ -41,9 +42,14 @@ export const brandNavItems: BackofficeNavItem[] = [
     icon: <ShieldCheck className="h-4 w-4" />,
   },
   {
-    href: '/users',
+    href: '/learners',
     label: '学员管理',
     icon: <UsersRound className="h-4 w-4" />,
+  },
+  {
+    href: '/learner-tags',
+    label: '学员标签',
+    icon: <Tag className="h-4 w-4" />,
   },
   {
     href: '/course-categories',

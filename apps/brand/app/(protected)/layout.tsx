@@ -34,6 +34,8 @@ const NAV_HREF_PERMISSIONS: Record<string, string> = {
   '/course-categories': PERMISSIONS.COURSE_CATEGORY_VIEW,
   '/courses': PERMISSIONS.COURSE_VIEW,
   '/schedule': PERMISSIONS.SESSION_VIEW,
+  '/learners': PERMISSIONS.LEARNER_VIEW,
+  '/learner-tags': PERMISSIONS.LEARNER_VIEW,
 }
 
 interface ProtectedLayoutProps {
