@@ -955,3 +955,79 @@ export interface UpdateRoleInput {
   description?: string
   permission_codes: string[]
 }
+
+// ─── Learner profiles & tags (Batch 13a) ───────────────────
+
+export type LearnerStatus = 'active' | 'frozen' | 'inactive'
+export type LearnerStatusFilter = LearnerStatus | 'all'
+export type LearnerTagStatus = 'active' | 'inactive'
+export type LearnerTagStatusFilter = LearnerTagStatus | 'all'
+
+export interface LearnerTagRef {
+  id: number
+  name: string
+  color: string
+}
+
+export interface Learner {
+  id: number
+  brand_id: number
+  learner_identity_id: number
+  primary_location_id: number | null
+  learner_no: string
+  nickname: string
+  remark: string
+  status: LearnerStatus
+  created_at: string
+  updated_at: string
+  phone: string
+  avatar_url: string
+  primary_location_name: string
+  tags: LearnerTagRef[]
+}
+
+export interface CreateLearnerInput {
+  phone: string
+  nickname?: string
+  primary_location_id?: number | null
+  learner_no?: string
+  remark?: string
+  tag_ids?: number[]
+}
+
+export interface UpdateLearnerInput {
+  nickname?: string
+  primary_location_id?: number | null
+  learner_no?: string
+  remark?: string
+  tag_ids?: number[]
+}
+
+export interface LearnerListQuery {
+  q?: string
+  status?: LearnerStatusFilter
+  primary_location_id?: number
+  page?: number
+  page_size?: number
+}
+
+export interface LearnerTag {
+  id: number
+  brand_id: number
+  name: string
+  color: string
+  status: LearnerTagStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateLearnerTagInput {
+  name: string
+  color?: string
+}
+
+export interface UpdateLearnerTagInput {
+  name?: string
+  color?: string
+  status?: LearnerTagStatus
+}

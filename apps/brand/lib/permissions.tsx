@@ -57,6 +57,13 @@ export const PERMISSIONS = {
   LOCATION_RESOURCE_CREATE: 'location_resource.create',
   LOCATION_RESOURCE_EDIT: 'location_resource.edit',
   LOCATION_RESOURCE_DELETE: 'location_resource.delete',
+
+  // Learner (Batch 13a)
+  LEARNER_VIEW: 'learner.view',
+  LEARNER_CREATE: 'learner.create',
+  LEARNER_EDIT: 'learner.edit',
+  LEARNER_DELETE: 'learner.delete',
+  LEARNER_FREEZE: 'learner.freeze',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
