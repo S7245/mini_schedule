@@ -10,6 +10,7 @@ import {
   Store,
   Tag,
   Tags,
+  Ticket,
   UsersRound,
 } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
@@ -50,6 +51,11 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/learner-tags',
     label: '学员标签',
     icon: <Tag className="h-4 w-4" />,
+  },
+  {
+    href: '/entitlement-products',
+    label: '权益产品',
+    icon: <Ticket className="h-4 w-4" />,
   },
   {
     href: '/course-categories',

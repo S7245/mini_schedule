@@ -9,6 +9,7 @@ import { useBrandLocations } from '@mini-schedule/api/locations'
 import { Button } from '@/components/ui/button'
 import { Hint } from '@/components/ui/hint'
 import { LearnerFormDialog } from '@/components/learners/learner-form-dialog'
+import { EntitlementsTab } from '@/components/learners/entitlements-tab'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -23,9 +24,9 @@ const STATUS_BADGE: Record<string, string> = {
   inactive: 'bg-slate-100 text-slate-700',
 }
 
-// 后续批次填充的占位 Tab。
-const PLACEHOLDER_TABS: { key: string; label: string; hint: string }[] = [
-  { key: 'entitlements', label: '权益', hint: '学员权益将在权益管理批次（13b）上线' },
+// Tab 配置：entitlements 已落地（13b），bookings/records 仍占位（13c/13e）。
+const TABS: { key: string; label: string; hint?: string }[] = [
+  { key: 'entitlements', label: '权益' },
   { key: 'bookings', label: '预约', hint: '学员预约将在预约批次（13c）上线' },
   { key: 'records', label: '履约记录', hint: '上课/履约记录将在签到批次（13e）上线' },
 ]
@@ -124,7 +125,7 @@ export default function LearnerDetailPage() {
 
           <div className="rounded-lg border border-slate-200 bg-white">
             <div className="flex gap-1 border-b border-slate-200 px-4">
-              {PLACEHOLDER_TABS.map((tab) => (
+              {TABS.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
@@ -140,9 +141,13 @@ export default function LearnerDetailPage() {
                 </button>
               ))}
             </div>
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              {PLACEHOLDER_TABS.find((t) => t.key === activeTab)?.hint}
-            </div>
+            {activeTab === 'entitlements' ? (
+              <EntitlementsTab learnerId={learner.id} />
+            ) : (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                {TABS.find((t) => t.key === activeTab)?.hint}
+              </div>
+            )}
           </div>
 
           <LearnerFormDialog
