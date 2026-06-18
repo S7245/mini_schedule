@@ -112,7 +112,14 @@ export function useGrantEntitlement() {
     { learnerId: LearnerId; data: GrantEntitlementInput }
   >({
     mutationFn: ({ learnerId, data }) => grantEntitlement(learnerId, data, true),
-    onSuccess: () => invalidateEntitlements(queryClient),
+    onSuccess: () => {
+      invalidateEntitlements(queryClient)
+      // 发放会改变产品的 issued_count（产品列表的反范式聚合），一并失效。
+      queryClient.invalidateQueries({
+        queryKey: ['brand-entitlement-products'],
+        refetchType: 'all',
+      })
+    },
   })
 }
 

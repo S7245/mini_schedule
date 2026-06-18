@@ -77,6 +77,29 @@ export function EntitlementProductFormDialog({
   const coursesQuery = useBrandCourses({ status: 'published', page: 1, page_size: 100 })
   const courses = useMemo(() => coursesQuery.data?.items ?? [], [coursesQuery.data])
 
+  // 把产品当前 scope 里、已不在 active/published 列表的项（门店停用 / 课程归档）并入选项，
+  // 否则它们的 chip 缺失 → 用户看不到也无法取消（镜像 learner-form 的停用门店处理）。
+  const locationOptions = useMemo(() => {
+    const base = locations.map((l) => ({ id: l.id, name: l.name }))
+    if (initial?.location_scope === 'specific') {
+      const known = new Set(base.map((o) => o.id))
+      for (const id of initial.location_ids) {
+        if (!known.has(id)) base.push({ id, name: `门店 #${id}（已停用）` })
+      }
+    }
+    return base
+  }, [locations, initial])
+  const courseOptions = useMemo(() => {
+    const base = courses.map((c) => ({ id: c.id, name: c.title }))
+    if (initial?.course_scope === 'specific') {
+      const known = new Set(base.map((o) => o.id))
+      for (const id of initial.course_ids) {
+        if (!known.has(id)) base.push({ id, name: `课程 #${id}（已归档）` })
+      }
+    }
+    return base
+  }, [courses, initial])
+
   const isEdit = Boolean(initial)
   const pending = createMutation.isPending || updateMutation.isPending
 
@@ -258,7 +281,7 @@ export function EntitlementProductFormDialog({
               label="适用门店"
               scope={locationScope}
               onScope={setLocationScope}
-              options={locations.map((l) => ({ id: l.id, name: l.name }))}
+              options={locationOptions}
               selected={locationIds}
               onToggle={(id) => toggleId(setLocationIds, id)}
               testid="location"
@@ -267,7 +290,7 @@ export function EntitlementProductFormDialog({
               label="适用课程"
               scope={courseScope}
               onScope={setCourseScope}
-              options={courses.map((c) => ({ id: c.id, name: c.title }))}
+              options={courseOptions}
               selected={courseIds}
               onToggle={(id) => toggleId(setCourseIds, id)}
               testid="course"
