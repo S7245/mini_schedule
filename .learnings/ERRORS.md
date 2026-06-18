@@ -140,3 +140,19 @@
 
 ### eslint 无 react-hooks/exhaustive-deps 规则 → disable 注释反而报错
 本仓 eslint 未启用 react-hooks 插件，写 `// eslint-disable-next-line react-hooks/exhaustive-deps` 会报「Definition for rule not found」error。正确做法：把依赖如实写进 deps 数组（既有 dialog 都是这么做的），不要加 disable 注释。
+
+## 2026-06-18 Batch 13a — code-review 修复 + 转 FR
+
+### P1：编辑弹窗主门店 seeding 两类静默写入（code-review）
+LearnerFormDialog 编辑模式：①回填 `initial.primary_location_id ?? defaultLocationId ?? 0` → 「编辑无主门店学员」时列表正筛着某门店（defaultLocationId）会被静默写入主门店；②主门店下拉只装 active 门店，学员主门店已停用则选项缺失 → native select 回退「未分配」(0) → 保存 `pid>0?pid:0`=0 静默清空。修：edit 回填只用 `initial.primary_location_id ?? 0`（不回退 defaultLocationId）；并把 initial 当前门店（即使停用，标「已停用」）并入 locationOptions。
+**Pending exposure**：所有「编辑弹窗的单选外键字段」都有这两类风险——回填别回退到列表筛选默认值；选项集要含实体当前值（哪怕不在 active 列表）。后续 13b 权益 product 选门店/课程、13c booking 选 session 等同理。
+
+### P2：标签改名后学员列表/详情 chip stale（内嵌快照未失效）
+`useUpdateLearnerTag` 原只失效 `['brand-learner-tags']`，但 `Learner.tags` 是快照 → 改名后 chip 仍旧名。修：tag mutation 一并失效 `['brand-learners']`+`['brand-learner']`。
+
+### P2：inactive 学员误显示「冻结」入口
+LearnerStatusToggle `isActive = status!=='frozen'` 把 inactive 当 active → 可点击翻成 frozen。修：inactive 短路 return null。
+
+### 转 FR（非阻断）
+- 学员列表搜索框无 debounce（每键一请求，react-query 仅去重 in-flight 相同 key）；低流量可接受，加 300ms debounce 更稳。
+- legacy `/users`(app_users) 页已从导航移除但路由仍在；择机退役（连同 `components/layout/sidebar.tsx` 死代码 + `lib/message-center-data.ts` 里 `/users` 链接）。

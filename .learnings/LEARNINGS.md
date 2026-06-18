@@ -277,3 +277,17 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 - 原生 select 要用 value setter + dispatch('change') 才能更新 React state。
 - 时间存 UTC：09:00 本地=01:00Z，按 starts_at 子串过滤会漏，需换算。
 - 部分 edge（XOR/越界/资源/权限/级联）前端 radio 已强制，走后端 API 直连验证更直接。
+
+## 2026-06-18 Batch 13a — 学员档案前端（/learners + /learner-tags）
+
+### 页面/弹窗照搬 resources 模板（列表+表单+状态切换+详情占位 Tab）
+`/learners` mirror `/resources`：`usePermissions`+`has(PERMISSIONS.LEARNER_*)` 算 canCreate/edit/delete/freeze → 写按钮 disabled+Hint；DataTable + 状态/门店 Select + 搜索 Input + 分页；删除 ConfirmDialog（`LEARNER_IN_USE` toast+弹窗保持，`LEARNER_NOT_FOUND` 关闭）。LearnerFormDialog mirror resource-form-dialog（RHF+zod，create/edit 用 `initial` 区分，QUOTA `getQuotaDetails`+inline 同 staff-create-dialog）。详情页用轻量 useState Tabs（权益/预约/履约空态占位，13b/c/e 填）。
+
+### 编辑弹窗预填「单选关联」要防两类静默写入（code-review 双 P1）
+主门店 select 两个坑：①回填值用 `initial ? (initial.primary_location_id ?? 0) : (defaultLocationId ?? 0)`——edit 模式**不能**回退到列表筛选门店（`defaultLocationId`），否则「编辑无主门店学员」会把当前筛选门店静默写进去。②下拉只装 active 门店时，学员主门店若已停用则选项缺失→native select 回退首项「未分配」→保存静默清空；必须把 `initial` 当前关联（即使停用）并入选项。规则：编辑弹窗里任何「单选外键」字段，回填来源只认实体当前值、选项集要包含实体当前值（哪怕它已不在 active 列表）。
+
+### 反范式内嵌快照：源改了要失效宿主查询
+`Learner.tags[]` 是后端 JOIN 出的标签快照（name/color）。改标签（`useUpdateLearnerTag`）只失效 `['brand-learner-tags']` 不够，列表/详情的 chip 会 stale → invalidateTags 同时失效 `['brand-learners']`+`['brand-learner']`。规则：A 实体内嵌了 B 的反范式快照时，B 的 mutation 要一并失效 A 的查询。
+
+### inactive 实体的「二态切换」按钮要排除第三态
+LearnerStatusToggle 用 `isActive = status !== 'frozen'` 算，inactive 会被当 active 显示「冻结」→点了把 inactive 翻 frozen（后端只校验目标态）。修：`if (status==='inactive') return null`。规则：active↔frozen 这类二态切换组件，碰到第三态（inactive）要显式短路，不能用 `!== 某态` 兜。
