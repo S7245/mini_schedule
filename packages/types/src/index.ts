@@ -1031,3 +1031,120 @@ export interface UpdateLearnerTagInput {
   color?: string
   status?: LearnerTagStatus
 }
+
+// ─── Entitlement products & learner entitlements (Batch 13b) ───
+
+export type EntitlementProductType = 'class_pack' | 'trial_pack' | 'membership_card'
+export type EntitlementProductStatus = 'active' | 'inactive'
+export type EntitlementProductStatusFilter = EntitlementProductStatus | 'all'
+export type EntitlementScope = 'all' | 'specific'
+export type EntitlementStatus =
+  | 'active'
+  | 'expired'
+  | 'depleted'
+  | 'frozen'
+  | 'cancelled'
+export type EntitlementAction =
+  | 'grant'
+  | 'hold'
+  | 'release'
+  | 'consume'
+  | 'no_show_consume'
+  | 'manual_adjust'
+
+export interface EntitlementProduct {
+  id: number
+  brand_id: number
+  name: string
+  description: string
+  product_type: EntitlementProductType
+  total_credits: number | null
+  validity_days: number
+  daily_booking_limit: number | null
+  weekly_booking_limit: number | null
+  monthly_booking_limit: number | null
+  concurrent_booking_limit: number | null
+  location_scope: EntitlementScope
+  course_scope: EntitlementScope
+  status: EntitlementProductStatus
+  issued_count: number
+  location_ids: number[]
+  course_ids: number[]
+  created_at: string
+  updated_at: string
+}
+
+// 限额字段 0 = 不限；total_credits 仅 count-based 用（membership 传 0/忽略）。
+export interface CreateEntitlementProductInput {
+  name: string
+  description?: string
+  product_type: EntitlementProductType
+  total_credits?: number
+  validity_days: number
+  daily_booking_limit?: number
+  weekly_booking_limit?: number
+  monthly_booking_limit?: number
+  concurrent_booking_limit?: number
+  location_scope: EntitlementScope
+  course_scope: EntitlementScope
+  location_ids?: number[]
+  course_ids?: number[]
+}
+
+export interface UpdateEntitlementProductInput {
+  name?: string
+  description?: string
+  total_credits?: number
+  validity_days?: number
+  daily_booking_limit?: number
+  weekly_booking_limit?: number
+  monthly_booking_limit?: number
+  concurrent_booking_limit?: number
+  location_scope?: EntitlementScope
+  course_scope?: EntitlementScope
+  location_ids?: number[]
+  course_ids?: number[]
+}
+
+export interface EntitlementProductListQuery {
+  status?: EntitlementProductStatusFilter
+  product_type?: EntitlementProductType | 'all'
+  page?: number
+  page_size?: number
+}
+
+export interface LearnerEntitlement {
+  id: number
+  brand_id: number
+  brand_learner_profile_id: number
+  product_id: number
+  product_name: string
+  product_type: EntitlementProductType
+  status: EntitlementStatus
+  total_credits: number | null
+  remaining_credits: number | null
+  locked_credits: number
+  consumed_credits: number
+  starts_at: string
+  expires_at: string
+  granted_by: number | null
+  remark: string
+  created_at: string
+  updated_at: string
+}
+
+export interface GrantEntitlementInput {
+  product_id: number
+  starts_at?: string
+  remark?: string
+}
+
+export interface EntitlementTransaction {
+  id: number
+  action: EntitlementAction
+  delta_credits: number
+  balance_after: number | null
+  note: string
+  operated_by: number | null
+  created_at: string
+}

@@ -24,6 +24,8 @@
     "./recurring-schedules": "./src/recurring-schedules.ts",
     "./learners": "./src/learners.ts",
     "./learner-tags": "./src/learner-tags.ts",
+    "./entitlement-products": "./src/entitlement-products.ts",
+    "./entitlements": "./src/entitlements.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {

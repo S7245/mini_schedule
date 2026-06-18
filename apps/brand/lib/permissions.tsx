@@ -64,6 +64,11 @@ export const PERMISSIONS = {
   LEARNER_EDIT: 'learner.edit',
   LEARNER_DELETE: 'learner.delete',
   LEARNER_FREEZE: 'learner.freeze',
+
+  // Entitlement (Batch 13b)
+  ENTITLEMENT_VIEW: 'entitlement.view',
+  ENTITLEMENT_MANAGE: 'entitlement.manage',
+  ENTITLEMENT_ADJUST: 'entitlement.adjust',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
