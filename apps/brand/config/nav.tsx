@@ -1,12 +1,14 @@
 import {
   BookOpen,
   Boxes,
+  CalendarCheck,
   CalendarClock,
   Contact,
   Dumbbell,
   Inbox,
   LayoutDashboard,
   ShieldCheck,
+  SlidersHorizontal,
   Store,
   Tag,
   Tags,
@@ -71,6 +73,16 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/schedule',
     label: '排课',
     icon: <CalendarClock className="h-4 w-4" />,
+  },
+  {
+    href: '/bookings',
+    label: '预约管理',
+    icon: <CalendarCheck className="h-4 w-4" />,
+  },
+  {
+    href: '/booking-policy',
+    label: '预约规则',
+    icon: <SlidersHorizontal className="h-4 w-4" />,
   },
   {
     href: '/trainings',

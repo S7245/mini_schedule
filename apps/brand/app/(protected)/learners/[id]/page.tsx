@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Hint } from '@/components/ui/hint'
 import { LearnerFormDialog } from '@/components/learners/learner-form-dialog'
 import { EntitlementsTab } from '@/components/learners/entitlements-tab'
+import { BookingsTab } from '@/components/learners/bookings-tab'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -24,10 +25,10 @@ const STATUS_BADGE: Record<string, string> = {
   inactive: 'bg-slate-100 text-slate-700',
 }
 
-// Tab 配置：entitlements 已落地（13b），bookings/records 仍占位（13c/13e）。
+// Tab 配置：entitlements（13b）+ bookings（13c）已落地，records 仍占位（13e）。
 const TABS: { key: string; label: string; hint?: string }[] = [
   { key: 'entitlements', label: '权益' },
-  { key: 'bookings', label: '预约', hint: '学员预约将在预约批次（13c）上线' },
+  { key: 'bookings', label: '预约' },
   { key: 'records', label: '履约记录', hint: '上课/履约记录将在签到批次（13e）上线' },
 ]
 
@@ -143,6 +144,8 @@ export default function LearnerDetailPage() {
             </div>
             {activeTab === 'entitlements' ? (
               <EntitlementsTab learnerId={learner.id} />
+            ) : activeTab === 'bookings' ? (
+              <BookingsTab learnerId={learner.id} />
             ) : (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 {TABS.find((t) => t.key === activeTab)?.hint}
