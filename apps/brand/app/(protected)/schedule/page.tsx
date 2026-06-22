@@ -32,6 +32,10 @@ import {
 } from '@/components/ui/table'
 import { SessionCreateDialog } from '@/components/schedule/session-create-dialog'
 import { RecurringTab } from '@/components/schedule/recurring-tab'
+import {
+  WaitlistDrawer,
+  type WaitlistSessionRef,
+} from '@/components/waitlist/waitlist-drawer'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { cn } from '@/lib/utils'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
@@ -65,6 +69,7 @@ export default function SchedulePage() {
   const { has } = usePermissions()
   const canCreate = has(PERMISSIONS.SESSION_CREATE)
   const canCancel = has(PERMISSIONS.SESSION_CANCEL)
+  const canViewWaitlist = has(PERMISSIONS.BOOKING_VIEW)
 
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
@@ -76,6 +81,8 @@ export default function SchedulePage() {
   const [cancelTarget, setCancelTarget] = useState<ClassSessionListItem | null>(
     null,
   )
+  const [waitlistSession, setWaitlistSession] =
+    useState<WaitlistSessionRef | null>(null)
 
   const locationsQuery = useBrandLocations(1, 100, 'all')
   const listQuery = useBrandClassSessions({
@@ -270,19 +277,38 @@ export default function SchedulePage() {
                   </TableCell>
                   <TableCell className="text-right">
                     {s.status === 'scheduled' || s.status === 'in_progress' ? (
-                      <Hint
-                        content={canCancel ? undefined : PERMISSION_DENIED_TOOLTIP}
-                      >
-                        <button
-                          type="button"
-                          className="text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
-                          disabled={!canCancel}
-                          onClick={() => setCancelTarget(s)}
-                          data-testid={`session-cancel-${s.id}`}
+                      <div className="flex justify-end gap-3 text-sm">
+                        {canViewWaitlist ? (
+                          <button
+                            type="button"
+                            className="text-primary hover:underline"
+                            onClick={() =>
+                              setWaitlistSession({
+                                id: s.id,
+                                course_title: s.course_title,
+                                booked_count: s.booked_count,
+                                capacity: s.capacity,
+                              })
+                            }
+                            data-testid={`session-waitlist-${s.id}`}
+                          >
+                            候补
+                          </button>
+                        ) : null}
+                        <Hint
+                          content={canCancel ? undefined : PERMISSION_DENIED_TOOLTIP}
                         >
-                          取消
-                        </button>
-                      </Hint>
+                          <button
+                            type="button"
+                            className="text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                            disabled={!canCancel}
+                            onClick={() => setCancelTarget(s)}
+                            data-testid={`session-cancel-${s.id}`}
+                          >
+                            取消
+                          </button>
+                        </Hint>
+                      </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
@@ -321,6 +347,12 @@ export default function SchedulePage() {
       ) : null}
 
       <SessionCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+
+      <WaitlistDrawer
+        open={Boolean(waitlistSession)}
+        onOpenChange={(o) => !o && setWaitlistSession(null)}
+        session={waitlistSession}
+      />
 
       <ConfirmDialog
         open={Boolean(cancelTarget)}

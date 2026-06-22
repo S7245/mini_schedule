@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useCreateBooking, useUsableEntitlements } from '@mini-schedule/api/bookings'
+import { useJoinWaitlist } from '@mini-schedule/api/waitlist'
 import { useBrandLearners } from '@mini-schedule/api/learners'
 import { useBrandClassSessions } from '@mini-schedule/api/class-sessions'
 import { ApiErrorClass, ErrorCodes } from '@mini-schedule/api/errors'
@@ -54,6 +55,14 @@ function mapError(err: unknown): string {
         return '所选权益不适用于该场次的门店或课程'
       case ErrorCodes.ASSISTED_REASON_REQUIRED:
         return '无权益占位须填写原因'
+      case ErrorCodes.WAITLIST_NOT_ALLOWED:
+        return '该场次不允许候补'
+      case ErrorCodes.WAITLIST_FULL:
+        return '候补名额已满'
+      case ErrorCodes.WAITLIST_DUPLICATE:
+        return '该学员已在该场次候补'
+      case ErrorCodes.WAITLIST_SESSION_NOT_FULL:
+        return '场次未满，请直接预约'
       default:
         return err.message || '预约失败，请重试'
     }
@@ -86,6 +95,14 @@ export function BookingCreateDialog({ open, onOpenChange }: BookingCreateDialogP
     () => sessionsQuery.data?.items ?? [],
     [sessionsQuery.data],
   )
+  const selectedSession = useMemo(
+    () => sessions.find((s) => s.id === sessionId) ?? null,
+    [sessions, sessionId],
+  )
+  const isFull = selectedSession
+    ? selectedSession.booked_count >= selectedSession.capacity
+    : false
+  const joinWaitlist = useJoinWaitlist()
 
   const usableQuery = useUsableEntitlements(
     sessionId || null,
@@ -138,6 +155,24 @@ export function BookingCreateDialog({ open, onOpenChange }: BookingCreateDialogP
         no_entitlement_reason: mode === 'none' ? reason.trim() : undefined,
       })
       toast.success('预约已创建')
+      onOpenChange(false)
+    } catch (err) {
+      setApiError(mapError(err))
+    }
+  }
+
+  async function onJoinWaitlist() {
+    setApiError(null)
+    if (!learnerId || !sessionId) {
+      setApiError('请选择学员和场次')
+      return
+    }
+    try {
+      await joinWaitlist.mutateAsync({
+        class_session_id: sessionId,
+        brand_learner_profile_id: learnerId,
+      })
+      toast.success('已加入候补')
       onOpenChange(false)
     } catch (err) {
       setApiError(mapError(err))
@@ -279,22 +314,38 @@ export function BookingCreateDialog({ open, onOpenChange }: BookingCreateDialogP
           )}
         </div>
         <DialogFooter>
+          {isFull && (
+            <span className="mr-auto self-center text-xs text-amber-600">
+              场次已满
+            </span>
+          )}
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={pending}
+            disabled={pending || joinWaitlist.isPending}
           >
             取消
           </Button>
-          <Button
-            type="button"
-            onClick={onSubmit}
-            disabled={pending}
-            data-testid="booking-submit"
-          >
-            {pending ? '提交中...' : '确认预约'}
-          </Button>
+          {isFull ? (
+            <Button
+              type="button"
+              onClick={onJoinWaitlist}
+              disabled={joinWaitlist.isPending}
+              data-testid="booking-join-waitlist"
+            >
+              {joinWaitlist.isPending ? '加入中...' : '加入候补'}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={onSubmit}
+              disabled={pending}
+              data-testid="booking-submit"
+            >
+              {pending ? '提交中...' : '确认预约'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
