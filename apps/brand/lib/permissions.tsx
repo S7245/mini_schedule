@@ -69,6 +69,14 @@ export const PERMISSIONS = {
   ENTITLEMENT_VIEW: 'entitlement.view',
   ENTITLEMENT_MANAGE: 'entitlement.manage',
   ENTITLEMENT_ADJUST: 'entitlement.adjust',
+
+  // Booking (Batch 13c)
+  BOOKING_VIEW: 'booking.view',
+  BOOKING_CREATE_ASSISTED: 'booking.create_assisted',
+  BOOKING_CANCEL: 'booking.cancel',
+  // 预约策略读写复用 schedule.*（决策 1：仅 brand-default 策略读改，零新权限码）
+  SCHEDULE_VIEW: 'schedule.view',
+  SCHEDULE_MANAGE: 'schedule.manage',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

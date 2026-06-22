@@ -1148,3 +1148,95 @@ export interface EntitlementTransaction {
   operated_by: number | null
   created_at: string
 }
+
+// ─── Booking 预约下单 (Batch 13c) ──────────────────────────────────────────
+export type BookingStatus =
+  | 'booked'
+  | 'cancelled'
+  | 'attended'
+  | 'pending_no_show'
+  | 'no_show'
+export type BookingStatusFilter = BookingStatus | 'all'
+export type BookingSource =
+  | 'learner_self_service'
+  | 'staff_assisted'
+  | 'waitlist_promotion'
+export type EntitlementMode = 'auto' | 'manual' | 'none'
+export type HoldStatus = 'held' | 'released' | 'consumed'
+
+export interface BookingHold {
+  id: number
+  learner_entitlement_id: number
+  product_name: string
+  status: HoldStatus
+  credits: number
+}
+
+export interface Booking {
+  id: number
+  brand_id: number
+  class_session_id: number
+  brand_learner_profile_id: number
+  source: BookingSource
+  status: BookingStatus
+  booked_at: string
+  cancelled_at: string | null
+  cancelled_by: number | null
+  cancel_source: string
+  cancel_reason: string
+  assisted_by: number | null
+  requires_entitlement_fix: boolean
+  no_entitlement_reason: string
+  created_at: string
+  updated_at: string
+  // 反范式快照
+  session_starts_at: string
+  session_ends_at: string
+  session_status: string
+  course_title: string
+  location_id: number
+  location_name: string
+  learner_name: string
+  learner_phone: string
+  hold: BookingHold | null
+}
+
+export interface BookingListQuery {
+  page?: number
+  page_size?: number
+  class_session_id?: number
+  location_id?: number
+  brand_learner_profile_id?: number
+  status?: BookingStatusFilter
+  requires_entitlement_fix?: boolean
+}
+
+export interface CreateBookingInput {
+  class_session_id: number
+  brand_learner_profile_id: number
+  entitlement_mode: EntitlementMode
+  learner_entitlement_id?: number
+  no_entitlement_reason?: string
+}
+
+export interface UsableEntitlement {
+  entitlement_id: number
+  product_name: string
+  product_type: EntitlementProductType
+  remaining_credits: number | null
+  expires_at: string
+  auto_selected: boolean
+}
+
+export interface BookingPolicy {
+  book_ahead_min_minutes: number
+  book_ahead_max_minutes: number | null
+  cancel_deadline_minutes: number
+  release_on_cancel: boolean
+  no_show_consumes_entitlement: boolean
+  daily_booking_limit: number | null
+  weekly_booking_limit: number | null
+  concurrent_booking_limit: number | null
+  allow_waitlist: boolean
+  waitlist_limit: number
+}

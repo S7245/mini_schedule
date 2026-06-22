@@ -26,6 +26,8 @@
     "./learner-tags": "./src/learner-tags.ts",
     "./entitlement-products": "./src/entitlement-products.ts",
     "./entitlements": "./src/entitlements.ts",
+    "./bookings": "./src/bookings.ts",
+    "./booking-policy": "./src/booking-policy.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {
