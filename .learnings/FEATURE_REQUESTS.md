@@ -154,3 +154,9 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 学员预约批次前端（Booking）。
 - 循环排课详情切换不同 id 时的 loading 态可更精细（当前 react-query 缓存命中即时显示）。
 - /schedule 单场次表标记「来自循环排课」（需后端 list DTO 暴露 recurring_schedule_id）。
+
+## 2026-06-22 Batch 13c
+- `useBrandClassSessions` 加 `enabled` 参数（代预约弹窗关闭态不必拉场次）。
+- 预约详情抽屉/页（已备 useBrandBooking/getBooking，含绑定权益+hold+来源+取消）。
+- 代预约弹窗满员场次置灰/标记（当前显示 booked/capacity 但不禁选，靠后端 SESSION_FULL 兜）。
+- /bookings 按学员/场次/门店筛选器（后端 list 已支持，前端仅暴露了状态+待补权益）。
