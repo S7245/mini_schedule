@@ -28,6 +28,7 @@
     "./entitlements": "./src/entitlements.ts",
     "./bookings": "./src/bookings.ts",
     "./booking-policy": "./src/booking-policy.ts",
+    "./waitlist": "./src/waitlist.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {

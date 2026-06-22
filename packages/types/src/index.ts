@@ -1240,3 +1240,42 @@ export interface BookingPolicy {
   allow_waitlist: boolean
   waitlist_limit: number
 }
+
+// ─── Waitlist 候补 (Batch 13d) ─────────────────────────────────────────────
+export type WaitlistStatus =
+  | 'waiting'
+  | 'eligible_to_promote'
+  | 'promoted'
+  | 'cancelled'
+  | 'skipped'
+
+export interface WaitlistEntry {
+  id: number
+  brand_id: number
+  class_session_id: number
+  brand_learner_profile_id: number
+  position: number
+  status: WaitlistStatus
+  promoted_booking_id: number | null
+  skipped_reason: string
+  operated_by: number | null
+  created_at: string
+  updated_at: string
+  // 反范式快照
+  learner_name: string
+  learner_phone: string
+  session_starts_at: string
+  course_title: string
+  location_id: number
+}
+
+export interface JoinWaitlistInput {
+  class_session_id: number
+  brand_learner_profile_id: number
+}
+
+export interface PromoteWaitlistInput {
+  entitlement_mode: EntitlementMode
+  learner_entitlement_id?: number
+  no_entitlement_reason?: string
+}
