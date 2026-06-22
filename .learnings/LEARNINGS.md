@@ -291,3 +291,17 @@ B11 修复：`StaffCreateDialog.mapApiError` 原本只在 QUOTA 分支 `setQuota
 
 ### inactive 实体的「二态切换」按钮要排除第三态
 LearnerStatusToggle 用 `isActive = status !== 'frozen'` 算，inactive 会被当 active 显示「冻结」→点了把 inactive 翻 frozen（后端只校验目标态）。修：`if (status==='inactive') return null`。规则：active↔frozen 这类二态切换组件，碰到第三态（inactive）要显式短路，不能用 `!== 某态` 兜。
+
+## 2026-06-18 Batch 13b — 权益产品页 + 学员权益 Tab
+
+### 产品页 + 详情内嵌 Tab 照搬 + 复杂表单拆子组件
+`/entitlement-products` mirror `/resources`/`/learners`。表单弹窗复杂（type 锁定 + total 仅 count-based 条件显示 + 双 scope all/specific + chip 多选）：text/number 字段走 RHF，type/scope/selectedIds 走 local state（type 驱动 total 显隐、scope 驱动 chip），onSubmit 合并 RHF data + local state + 手动校验（count-based total>0、specific≥1 id）。把 LimitField/ScopePicker 抽成同文件子组件控制体积。学员详情「权益」Tab 用一个 `EntitlementsTab(learnerId)` 组件（列表 + grant/adjust/transactions 三个内联子弹窗），详情页按 activeTab 条件渲染——13a 占位 Tab 这样落地，不动详情页骨架。
+
+### 反范式快照 + 派生聚合的失效要跨查询（延续 13a + 新增 issued_count）
+权益 mutation 失效 `['learner-entitlements']`；但 grant 还改产品的 `issued_count`（产品列表的反范式聚合），必须**额外**失效 `['brand-entitlement-products']`，否则产品页「已发放」滞后（F1 同期 P1）。规则：一个 mutation 若改了 A 实体又顺带改 B 实体的派生计数/快照，A 和 B 的查询都要失效。
+
+### 编辑弹窗的 scope/外键选项要并入「当前已选但已停用/归档」项（13a 同源，多选版）
+产品 scope chip 只从 active 门店 / published 课程拉 → 若产品 scope 含已停用门店/已归档课程，chip 缺失 → 看不到也删不掉。修：`locationOptions`/`courseOptions` = active 列表 ∪ (initial.scope_ids 中不在列表的，标「#id（已停用/已归档）」)。配合后端 scope 放宽为存在性，保留这些项不再 400。规则同 13a learner-form 主门店，扩到多选 scope。
+
+### 列表行复用为编辑初值时，依赖 list DTO 填齐（F1 前端侧）
+产品页 `setEditing(listRow)` 直接把列表项传进编辑弹窗当 `initial`。一旦 list DTO 漏字段（F1：location_ids/course_ids 空），编辑弹窗 scope 不回填→保存炸。前端侧规则：把 list 行复用为编辑 initial 前，确认该 list 端点返回了编辑所需的全部字段（或改为编辑时按 id 拉 detail）。
