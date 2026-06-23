@@ -160,3 +160,8 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 预约详情抽屉/页（已备 useBrandBooking/getBooking，含绑定权益+hold+来源+取消）。
 - 代预约弹窗满员场次置灰/标记（当前显示 booked/capacity 但不禁选，靠后端 SESSION_FULL 兜）。
 - /bookings 按学员/场次/门店筛选器（后端 list 已支持，前端仅暴露了状态+待补权益）。
+
+## 2026-06-22 Batch 13d
+- 候补 drawer 支持从 /bookings 也能打开（当前仅 /schedule 场次行入口）。
+- 满员场次代预约下拉受 page_size=100 限制（既有），大量场次时需搜索/虚拟列表。
+- 候补转正成功后 toast 带「已为 X 创建预约」更具体反馈。
