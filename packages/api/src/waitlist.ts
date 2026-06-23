@@ -61,8 +61,11 @@ export function useSessionWaitlist(sessionId: number | null, enabled = true) {
   })
 }
 
+// join/skip/cancel 改变活跃候补数 → 同时失效场次列表（携带 waitlist_count，驱动场次行「候补 (N)」徽标）。
 function invalidateWaitlist(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey: ['brand-waitlist'], refetchType: 'all' })
+  for (const key of ['brand-waitlist', 'brand-class-sessions', 'brand-class-session']) {
+    queryClient.invalidateQueries({ queryKey: [key], refetchType: 'all' })
+  }
 }
 
 // 转正会建 booking + 扣权益 + 改场次 booked_count → 一并失效（同 13c 三连）。

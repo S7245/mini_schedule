@@ -81,7 +81,7 @@ export default function SchedulePage() {
   const [cancelTarget, setCancelTarget] = useState<ClassSessionListItem | null>(
     null,
   )
-  const [waitlistSession, setWaitlistSession] =
+  const [waitlistRef, setWaitlistRef] =
     useState<WaitlistSessionRef | null>(null)
 
   const locationsQuery = useBrandLocations(1, 100, 'all')
@@ -96,6 +96,21 @@ export default function SchedulePage() {
 
   const items = listQuery.data?.items ?? []
   const total = listQuery.data?.total ?? 0
+
+  // Batch 13d：抽屉打开时从最新列表派生场次容量/booked，保证抽屉内转正后头部「容量 N/N」与
+  // 转正门控随 brand-class-sessions 失效实时刷新（不再用打开时的冻结快照）；列表无此场次时回退快照。
+  const waitlistSession = useMemo<WaitlistSessionRef | null>(() => {
+    if (!waitlistRef) return null
+    const live = items.find((s) => s.id === waitlistRef.id)
+    return live
+      ? {
+          id: live.id,
+          course_title: live.course_title,
+          booked_count: live.booked_count,
+          capacity: live.capacity,
+        }
+      : waitlistRef
+  }, [waitlistRef, items])
   const totalPages = useMemo(
     () => (total ? Math.max(1, Math.ceil(total / pageSize)) : 1),
     [total, pageSize],
@@ -283,7 +298,7 @@ export default function SchedulePage() {
                             type="button"
                             className="text-primary hover:underline"
                             onClick={() =>
-                              setWaitlistSession({
+                              setWaitlistRef({
                                 id: s.id,
                                 course_title: s.course_title,
                                 booked_count: s.booked_count,
@@ -292,7 +307,7 @@ export default function SchedulePage() {
                             }
                             data-testid={`session-waitlist-${s.id}`}
                           >
-                            候补
+                            候补{s.waitlist_count > 0 ? ` (${s.waitlist_count})` : ''}
                           </button>
                         ) : null}
                         <Hint
@@ -350,7 +365,7 @@ export default function SchedulePage() {
 
       <WaitlistDrawer
         open={Boolean(waitlistSession)}
-        onOpenChange={(o) => !o && setWaitlistSession(null)}
+        onOpenChange={(o) => !o && setWaitlistRef(null)}
         session={waitlistSession}
       />
 

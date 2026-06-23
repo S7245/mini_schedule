@@ -377,6 +377,8 @@ export interface ClassSessionListItem {
   ends_at: string
   capacity: number
   booked_count: number
+  /** Batch 13d：活跃候补人数（waiting/eligible_to_promote），用于场次行「候补 (N)」徽标。 */
+  waitlist_count: number
   status: ClassSessionStatus
   created_at: string
   updated_at: string
