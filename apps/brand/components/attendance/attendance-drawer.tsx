@@ -106,13 +106,18 @@ export function AttendanceDrawer({
   const [endConfirm, setEndConfirm] = useState(false)
   const [noShowTarget, setNoShowTarget] = useState<Booking | null>(null)
   const [noShowReason, setNoShowReason] = useState('')
+  // 仅禁用正在签到的那一行（共享 mutation.isPending 会误禁整列）。
+  const [attendingId, setAttendingId] = useState<number | null>(null)
 
   async function handleAttend(b: Booking) {
+    setAttendingId(b.id)
     try {
       await attendMutation.mutateAsync({ id: b.id })
       toast.success('已标记到课')
     } catch (err) {
       toast.error(err instanceof ApiErrorClass ? err.message : '操作失败')
+    } finally {
+      setAttendingId(null)
     }
   }
 
@@ -237,7 +242,7 @@ export function AttendanceDrawer({
                               <button
                                 type="button"
                                 className="text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
-                                disabled={!canMark || attendMutation.isPending}
+                                disabled={!canMark || attendingId === b.id}
                                 onClick={() => handleAttend(b)}
                                 data-testid="attendance-mark"
                               >

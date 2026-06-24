@@ -95,7 +95,8 @@ export function useUsableEntitlements(
   })
 }
 
-// 下单/取消会同时改预约列表、场次 booked_count、学员预约 Tab、学员权益余额/锁定，全部失效。
+// 下单/取消/签到/爽约会同时改预约列表、场次 booked_count、学员预约 Tab、学员权益
+// 余额/锁定/消耗、权益流水（hold/release/consume txn），全部失效。
 function invalidateBooking(queryClient: ReturnType<typeof useQueryClient>) {
   for (const key of [
     'brand-bookings',
@@ -103,6 +104,7 @@ function invalidateBooking(queryClient: ReturnType<typeof useQueryClient>) {
     'brand-class-sessions',
     'brand-class-session',
     'learner-entitlements',
+    'entitlement-transactions',
   ]) {
     queryClient.invalidateQueries({ queryKey: [key], refetchType: 'all' })
   }
