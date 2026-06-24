@@ -77,6 +77,10 @@ export const PERMISSIONS = {
   // 预约策略读写复用 schedule.*（决策 1：仅 brand-default 策略读改，零新权限码）
   SCHEDULE_VIEW: 'schedule.view',
   SCHEDULE_MANAGE: 'schedule.manage',
+  // 签到 / 履约 / 爽约 (Batch 13e)
+  ATTENDANCE_VIEW: 'attendance.view',
+  ATTENDANCE_MARK: 'attendance.mark',
+  ATTENDANCE_NO_SHOW_CONFIRM: 'attendance.no_show_confirm',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

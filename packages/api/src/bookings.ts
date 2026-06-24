@@ -4,6 +4,7 @@ import type {
   Booking,
   BookingListQuery,
   CreateBookingInput,
+  EndSessionResult,
   PageResponse,
   UsableEntitlement,
 } from '@mini-schedule/types'
@@ -119,6 +120,56 @@ export function useCancelBooking() {
   const queryClient = useQueryClient()
   return useMutation<Booking, Error, { id: BookingId; reason?: string }>({
     mutationFn: ({ id, reason }) => cancelBooking(id, reason, true),
+    onSuccess: () => invalidateBooking(queryClient),
+  })
+}
+
+// ─── 签到 / 履约 / 爽约 (Batch 13e) ──────────────────────────────────────────
+
+export function attendBooking(id: BookingId, note?: string, silent = false) {
+  return http.post<Booking>(
+    `/api/v1/brand/bookings/${id}/attend`,
+    { note },
+    { silent },
+  )
+}
+
+export function confirmNoShow(id: BookingId, reason?: string, silent = false) {
+  return http.post<Booking>(
+    `/api/v1/brand/bookings/${id}/no-show`,
+    { reason },
+    { silent },
+  )
+}
+
+export function endSession(sessionId: number | string, silent = false) {
+  return http.post<EndSessionResult>(
+    `/api/v1/brand/class-sessions/${sessionId}/end`,
+    {},
+    { silent },
+  )
+}
+
+export function useAttendBooking() {
+  const queryClient = useQueryClient()
+  return useMutation<Booking, Error, { id: BookingId; note?: string }>({
+    mutationFn: ({ id, note }) => attendBooking(id, note, true),
+    onSuccess: () => invalidateBooking(queryClient),
+  })
+}
+
+export function useConfirmNoShow() {
+  const queryClient = useQueryClient()
+  return useMutation<Booking, Error, { id: BookingId; reason?: string }>({
+    mutationFn: ({ id, reason }) => confirmNoShow(id, reason, true),
+    onSuccess: () => invalidateBooking(queryClient),
+  })
+}
+
+export function useEndSession() {
+  const queryClient = useQueryClient()
+  return useMutation<EndSessionResult, Error, { sessionId: number | string }>({
+    mutationFn: ({ sessionId }) => endSession(sessionId, true),
     onSuccess: () => invalidateBooking(queryClient),
   })
 }

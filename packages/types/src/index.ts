@@ -1213,6 +1213,13 @@ export interface BookingListQuery {
   requires_entitlement_fix?: boolean
 }
 
+// ─── 签到 / 履约 / 爽约 (Batch 13e) ──────────────────────────────────────────
+export interface EndSessionResult {
+  session_id: number
+  status: string
+  pending_no_show_count: number
+}
+
 export interface CreateBookingInput {
   class_session_id: number
   brand_learner_profile_id: number
