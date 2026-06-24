@@ -36,6 +36,10 @@ import {
   WaitlistDrawer,
   type WaitlistSessionRef,
 } from '@/components/waitlist/waitlist-drawer'
+import {
+  AttendanceDrawer,
+  type AttendanceSessionRef,
+} from '@/components/attendance/attendance-drawer'
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { cn } from '@/lib/utils'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
@@ -70,6 +74,7 @@ export default function SchedulePage() {
   const canCreate = has(PERMISSIONS.SESSION_CREATE)
   const canCancel = has(PERMISSIONS.SESSION_CANCEL)
   const canViewWaitlist = has(PERMISSIONS.BOOKING_VIEW)
+  const canViewAttendance = has(PERMISSIONS.ATTENDANCE_VIEW)
 
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
@@ -83,6 +88,8 @@ export default function SchedulePage() {
   )
   const [waitlistRef, setWaitlistRef] =
     useState<WaitlistSessionRef | null>(null)
+  const [attendanceRef, setAttendanceRef] =
+    useState<AttendanceSessionRef | null>(null)
 
   const locationsQuery = useBrandLocations(1, 100, 'all')
   const listQuery = useBrandClassSessions({
@@ -111,6 +118,21 @@ export default function SchedulePage() {
         }
       : waitlistRef
   }, [waitlistRef, items])
+  // 同理：抽屉从最新列表派生场次状态，结束场次后 status→completed，「结束场次」按钮随之禁用。
+  const attendanceSession = useMemo<AttendanceSessionRef | null>(() => {
+    if (!attendanceRef) return null
+    const live = items.find((s) => s.id === attendanceRef.id)
+    return live
+      ? {
+          id: live.id,
+          course_title: live.course_title,
+          starts_at: live.starts_at,
+          ends_at: live.ends_at,
+          location_name: live.location_name,
+          status: live.status,
+        }
+      : attendanceRef
+  }, [attendanceRef, items])
   const totalPages = useMemo(
     () => (total ? Math.max(1, Math.ceil(total / pageSize)) : 1),
     [total, pageSize],
@@ -264,7 +286,16 @@ export default function SchedulePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((s) => (
+              {items.map((s) => {
+                // 签到入口对 已排期/进行中/已完成 均可见（completed 上确认爽约）。
+                const showAttendance =
+                  canViewAttendance &&
+                  (s.status === 'scheduled' ||
+                    s.status === 'in_progress' ||
+                    s.status === 'completed')
+                const showLive =
+                  s.status === 'scheduled' || s.status === 'in_progress'
+                return (
                 <TableRow key={s.id} data-testid="session-row">
                   <TableCell className="font-medium">
                     {formatRange(s.starts_at, s.ends_at)}
@@ -291,9 +322,28 @@ export default function SchedulePage() {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {s.status === 'scheduled' || s.status === 'in_progress' ? (
+                    {showAttendance || showLive ? (
                       <div className="flex justify-end gap-3 text-sm">
-                        {canViewWaitlist ? (
+                        {showAttendance ? (
+                          <button
+                            type="button"
+                            className="text-primary hover:underline"
+                            onClick={() =>
+                              setAttendanceRef({
+                                id: s.id,
+                                course_title: s.course_title,
+                                starts_at: s.starts_at,
+                                ends_at: s.ends_at,
+                                location_name: s.location_name,
+                                status: s.status,
+                              })
+                            }
+                            data-testid={`session-attendance-${s.id}`}
+                          >
+                            签到
+                          </button>
+                        ) : null}
+                        {showLive && canViewWaitlist ? (
                           <button
                             type="button"
                             className="text-primary hover:underline"
@@ -310,26 +360,29 @@ export default function SchedulePage() {
                             候补{s.waitlist_count > 0 ? ` (${s.waitlist_count})` : ''}
                           </button>
                         ) : null}
-                        <Hint
-                          content={canCancel ? undefined : PERMISSION_DENIED_TOOLTIP}
-                        >
-                          <button
-                            type="button"
-                            className="text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
-                            disabled={!canCancel}
-                            onClick={() => setCancelTarget(s)}
-                            data-testid={`session-cancel-${s.id}`}
+                        {showLive ? (
+                          <Hint
+                            content={canCancel ? undefined : PERMISSION_DENIED_TOOLTIP}
                           >
-                            取消
-                          </button>
-                        </Hint>
+                            <button
+                              type="button"
+                              className="text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+                              disabled={!canCancel}
+                              onClick={() => setCancelTarget(s)}
+                              data-testid={`session-cancel-${s.id}`}
+                            >
+                              取消
+                            </button>
+                          </Hint>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
         )}
@@ -367,6 +420,12 @@ export default function SchedulePage() {
         open={Boolean(waitlistSession)}
         onOpenChange={(o) => !o && setWaitlistRef(null)}
         session={waitlistSession}
+      />
+
+      <AttendanceDrawer
+        open={Boolean(attendanceSession)}
+        onOpenChange={(o) => !o && setAttendanceRef(null)}
+        session={attendanceSession}
       />
 
       <ConfirmDialog
