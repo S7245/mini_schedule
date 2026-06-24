@@ -165,3 +165,8 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 候补 drawer 支持从 /bookings 也能打开（当前仅 /schedule 场次行入口）。
 - 满员场次代预约下拉受 page_size=100 限制（既有），大量场次时需搜索/虚拟列表。
 - 候补转正成功后 toast 带「已为 X 创建预约」更具体反馈。
+
+## 2026-06-24 Batch 13e
+- 占位预约签到文案：落库正确（无消费、保留 fix），但 entitlement 列显「无权益·占位」、成功 toast 同普通到课，弱于契约建议「无权益·已记异常·待补」。建议占位签到走差异化 toast/标签。
+- 签到名单 page_size=100 上限（>100 人场次需分页/虚拟列表，同 13c/13d 既有）。
+- 场次行 attended/no_show 计数徽标（当前仅 drawer 内派生，列表行无）。

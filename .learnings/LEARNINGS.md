@@ -327,3 +327,20 @@ WaitlistDrawer 头部显示场次「容量 N/N」+ 决定转正按钮是否 disa
 
 ### 复用 13c 弹窗权益模式子块做 PromoteDialog
 转正弹窗的「auto 预览/manual 下拉/none 占位」与 13c BookingCreateDialog 同构，PromoteDialog 复用 `useUsableEntitlements(sessionId, learnerId)` + 同款 radio + 错误码 mapError。新批的「下单变体」弹窗直接照搬 13c 权益子块，不重写。
+
+## 2026-06-24 Batch 13e — 签到前端（AttendanceDrawer + 履约 Tab）
+
+### 派生终态从 null hold + 业务标志推断（后端不直给 released）
+RecordsTab settleLabel：后端详情 join 过滤 released hold → 退课 booking 的 hold=null。区分靠条件顺序——先 requires_entitlement_fix→「占位·无权益」，再 no_show+null-hold→「已退回（退课）」，consumed→「(已消耗)」。占位永不误判为退课。
+
+### 共享 mutation.isPending 会误禁整列；按行 id 跟踪在途
+单 useMutation 实例的 isPending 对列表每行都 true → 标到课 A 时 B/C 全灰。用 useState<id|null> attendingId 只禁在途那一行。
+
+### 抽屉场次态从最新列表 live 派生（沿用 13d）
+AttendanceDrawer 的 session 从 schedule items.find(live) 派生 → 结束场次后 brand-class-sessions 失效 → status=completed → 「结束场次」按钮自动禁用。冻结快照会 stale。
+
+### 签到入口对 completed 场次也可见
+/schedule 行 showAttendance=scheduled|in_progress|completed（completed 上确认爽约），与「取消/候补」的 showLive=scheduled|in_progress 区分。
+
+### invalidateBooking 补 entitlement-transactions
+签到/爽约/取消均写 hold/release/consume/no_show_consume 流水 → 失效集补 entitlement-transactions（cancel 同样受益，原既有遗漏）。
