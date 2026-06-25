@@ -170,3 +170,10 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 占位预约签到文案：落库正确（无消费、保留 fix），但 entitlement 列显「无权益·占位」、成功 toast 同普通到课，弱于契约建议「无权益·已记异常·待补」。建议占位签到走差异化 toast/标签。
 - 签到名单 page_size=100 上限（>100 人场次需分页/虚拟列表，同 13c/13d 既有）。
 - 场次行 attended/no_show 计数徽标（当前仅 drawer 内派生，列表行无）。
+
+## 2026-06-25 Batch 14a
+- 14b：我的权益(GET /entitlements) + 上课记录(13e 终态 list) + 加入候补(满员 POST /waitlist)；app-entitlements 失效键已预埋。
+- 课程表「剩余」用 list 快照，预约弹窗未拉 per-session live 容量（后端原子兜 SESSION_FULL + inline 报错）；可用 useAppClassSession 拉详情刷新。
+- 「即将上课」筛 status=booked 含已过期未结束的 booked（后端按 status 非时间）；可加时间分组/过滤。
+- app/admin protected layout 硬导航水合竞态统一加 hasHydrated 门（跨端 FR）；底部导航可改 Next <Link> 走软导航。
+- 微信订阅消息（§7.5）；legacy /courses、/trainings 页随 app_users 退役。
