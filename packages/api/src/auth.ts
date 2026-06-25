@@ -172,7 +172,7 @@ export interface AdminLoginRequest {
 
 export interface AppLoginRequest {
   code: string
-  brand_id: string
+  brand_id: number // 后端 WechatLoginRequest.BrandID int64 —— 必须发 number（发 string 会 JSON bind 失败）。
   nickname?: string
 }
 

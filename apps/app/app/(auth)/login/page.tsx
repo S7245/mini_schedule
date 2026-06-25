@@ -36,10 +36,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     setIsSubmitting(true)
     try {
-      await loginMutation.mutateAsync({
-        ...data,
-        brand_id: String(data.brand_id),
-      })
+      await loginMutation.mutateAsync(data) // brand_id 已是 number（zod coerce）；后端 int64 需 number
       router.push('/dashboard')
     } finally {
       setIsSubmitting(false)
