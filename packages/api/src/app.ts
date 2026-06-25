@@ -75,7 +75,7 @@ export function useCreateTraining() {
 
 /** 课程表场次（C 端只读，mirror 后端 classsession.Session JSON 的展示子集）。 */
 export interface AppClassSession {
-  id: string
+  id: number
   course_title: string
   location_name: string
   starts_at: string
@@ -87,7 +87,7 @@ export interface AppClassSession {
 
 /** 预约绑定的权益锁（占位预约为 null）。 */
 export interface AppBookingHold {
-  id: string
+  id: number
   product_name: string
   status: string
   credits: number
@@ -95,8 +95,8 @@ export interface AppBookingHold {
 
 /** 我的预约（mirror 后端 booking.Booking JSON 的展示子集）。 */
 export interface AppBooking {
-  id: string
-  class_session_id: string
+  id: number
+  class_session_id: number
   source: string
   status: string
   booked_at: string
@@ -112,7 +112,7 @@ export interface AppBooking {
 
 /** 预约前权益预览（§5.7 序，auto_selected=true 为将用项）。 */
 export interface AppUsableEntitlement {
-  entitlement_id: string
+  entitlement_id: number
   product_name: string
   product_type: string
   remaining_credits: number | null
@@ -131,7 +131,7 @@ export function useAppClassSessions(page = 1, pageSize = 20) {
   })
 }
 
-export function useAppClassSession(id: string | null) {
+export function useAppClassSession(id: number | null) {
   return useQuery<AppClassSession>({
     queryKey: ['app-class-session', id],
     queryFn: () => http.get<AppClassSession>(`/api/v1/app/class-sessions/${id}`),
@@ -150,7 +150,7 @@ export function useAppBookings(status = '', page = 1, pageSize = 20) {
 }
 
 /** 预约前权益预览（仅展示，§5.7 学员不自选）。 */
-export function useAppUsableEntitlements(sessionId: string | null) {
+export function useAppUsableEntitlements(sessionId: number | null) {
   return useQuery<AppUsableEntitlement[]>({
     queryKey: ['app-usable-entitlements', sessionId],
     queryFn: () =>
@@ -164,7 +164,7 @@ export function useAppUsableEntitlements(sessionId: string | null) {
 /** 自助预约（auto/learner_self_service）。失败态由 ApiErrorClass.code 区分（见 appBookingErrorText）。 */
 export function useAppCreateBooking() {
   const queryClient = useQueryClient()
-  return useMutation<AppBooking, Error, { class_session_id: string }>({
+  return useMutation<AppBooking, Error, { class_session_id: number }>({
     mutationFn: (data) => http.post<AppBooking>('/api/v1/app/bookings', data, { silent: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app-class-sessions'] })
@@ -177,7 +177,7 @@ export function useAppCreateBooking() {
 /** 自助取消（ownership 由后端 tx 内校验）。 */
 export function useAppCancelBooking() {
   const queryClient = useQueryClient()
-  return useMutation<AppBooking, Error, { id: string; reason?: string }>({
+  return useMutation<AppBooking, Error, { id: number; reason?: string }>({
     mutationFn: ({ id, reason }) =>
       http.post<AppBooking>(`/api/v1/app/bookings/${id}/cancel`, { reason: reason ?? '' }, { silent: true }),
     onSuccess: () => {
@@ -191,6 +191,8 @@ export function useAppCancelBooking() {
 /** 学员视角的失败文案（覆盖 §7.3/§22.1 的不可预约/取消原因）。未知码回退后端 message。 */
 const APP_BOOKING_ERROR_TEXT: Record<string, string> = {
   ENTITLEMENT_NONE_AVAILABLE: '你暂无可用权益，请联系机构购买或开通',
+  ENTITLEMENT_NOT_USABLE: '权益不可用（已过期/耗尽/冻结），请联系机构',
+  ENTITLEMENT_SCOPE_MISMATCH: '权益不适用于该课程',
   SESSION_FULL: '该场次已满员',
   BOOKING_WINDOW_CLOSED: '当前不在可预约时间范围内',
   BOOKING_DUPLICATE: '你已预约该场次',
