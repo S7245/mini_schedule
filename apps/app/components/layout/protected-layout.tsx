@@ -22,10 +22,12 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) return null
 
+  // 菜单对齐 blueprint §14.4（学员小程序）。课程表/我的预约为 Batch 14a 自助预约；
+  // legacy /courses、/trainings 页仍保留路由（app_users 退役留 FR），暂不入底部导航。
   const navItems = [
     { href: '/dashboard', label: '首页', icon: '🏠' },
-    { href: '/courses', label: '课程', icon: '📋' },
-    { href: '/trainings', label: '训练', icon: '🏋️' },
+    { href: '/class-sessions', label: '课程表', icon: '📅' },
+    { href: '/bookings', label: '我的预约', icon: '🎫' },
     { href: '/profile', label: '我的', icon: '👤' },
   ]
 
