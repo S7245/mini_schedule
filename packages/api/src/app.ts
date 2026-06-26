@@ -188,7 +188,73 @@ export function useAppCancelBooking() {
   })
 }
 
-/** 学员视角的失败文案（覆盖 §7.3/§22.1 的不可预约/取消原因）。未知码回退后端 message。 */
+// ─── 我的权益 / 加入候补（Batch 14b）────────────────────
+
+/** 我的权益（mirror 后端 entitlement.Entitlement 展示子集；id 为 number 对齐 int64）。 */
+export interface AppEntitlement {
+  id: number
+  product_id: number
+  product_name: string
+  product_type: string
+  status: string
+  total_credits: number | null
+  remaining_credits: number | null
+  locked_credits: number
+  expires_at: string
+}
+
+/** 我的候补（mirror 后端 waitlist.Entry 展示子集）。 */
+export interface AppWaitlistEntry {
+  id: number
+  class_session_id: number
+  position: number
+  status: string
+  session_starts_at: string
+  course_title: string
+  location_name: string
+}
+
+/** 我的权益（settle-on-read，过期/耗尽状态正确）。queryKey 与 14a 预约/取消失效键一致 → 下单后即时刷新。 */
+export function useAppEntitlements() {
+  return useQuery<AppEntitlement[]>({
+    queryKey: ['app-entitlements'],
+    queryFn: () => http.get<AppEntitlement[]>('/api/v1/app/entitlements'),
+  })
+}
+
+/** 我的候补（本人活跃候补）。 */
+export function useAppWaitlist() {
+  return useQuery<AppWaitlistEntry[]>({
+    queryKey: ['app-waitlist'],
+    queryFn: () => http.get<AppWaitlistEntry[]>('/api/v1/app/waitlist'),
+  })
+}
+
+/** 满员场次加入候补（self-service，不锁权益）。 */
+export function useAppJoinWaitlist() {
+  const queryClient = useQueryClient()
+  return useMutation<AppWaitlistEntry, Error, { class_session_id: number }>({
+    mutationFn: (data) => http.post<AppWaitlistEntry>('/api/v1/app/waitlist', data, { silent: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['app-waitlist'] })
+      queryClient.invalidateQueries({ queryKey: ['app-class-sessions'] })
+    },
+  })
+}
+
+/** 自助取消候补（ownership 由后端 tx 内校验）。 */
+export function useAppCancelWaitlist() {
+  const queryClient = useQueryClient()
+  return useMutation<AppWaitlistEntry, Error, { id: number }>({
+    mutationFn: ({ id }) => http.post<AppWaitlistEntry>(`/api/v1/app/waitlist/${id}/cancel`, {}, { silent: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['app-waitlist'] })
+      queryClient.invalidateQueries({ queryKey: ['app-class-sessions'] })
+    },
+  })
+}
+
+/** 学员视角的失败文案（覆盖 §7.3/§22.1 的不可预约/取消原因 + §22.4 候补）。未知码回退后端 message。 */
 const APP_BOOKING_ERROR_TEXT: Record<string, string> = {
   ENTITLEMENT_NONE_AVAILABLE: '你暂无可用权益，请联系机构购买或开通',
   ENTITLEMENT_NOT_USABLE: '权益不可用（已过期/耗尽/冻结），请联系机构',
@@ -204,6 +270,11 @@ const APP_BOOKING_ERROR_TEXT: Record<string, string> = {
   BOOKING_CANCEL_DEADLINE_PASSED: '已超过取消截止时间',
   BOOKING_NOT_CANCELLABLE: '该预约当前不可取消',
   BOOKING_NOT_FOUND: '预约不存在',
+  WAITLIST_NOT_ALLOWED: '该场次不支持候补',
+  WAITLIST_SESSION_NOT_FULL: '场次未满，请直接预约',
+  WAITLIST_FULL: '候补名额已满',
+  WAITLIST_DUPLICATE: '你已在该场次候补',
+  WAITLIST_ENTRY_NOT_FOUND: '候补不存在',
 }
 
 /** 把预约/取消错误转成学员友好中文文案（inline 展示）。 */
