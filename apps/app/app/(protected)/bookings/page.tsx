@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import {
   useAppBookings,
   useAppCancelBooking,
+  useAppWaitlist,
+  useAppCancelWaitlist,
   appBookingErrorText,
   type AppBooking,
 } from '@mini-schedule/api/app'
@@ -30,6 +32,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const FILTERS: { key: string; label: string }[] = [
   { key: 'booked', label: '即将上课' },
+  { key: 'waitlist', label: '候补中' },
   { key: 'cancelled', label: '已取消' },
   { key: '', label: '全部' },
 ]
@@ -85,8 +88,20 @@ function CancelDialog({ booking, onClose }: { booking: AppBooking | null; onClos
 
 export default function BookingsPage() {
   const [status, setStatus] = useState('booked')
-  const { data, isLoading } = useAppBookings(status, 1, 50)
+  const showWaitlist = status === 'waitlist'
+  const { data, isLoading } = useAppBookings(showWaitlist ? '' : status, 1, 50)
+  const waitlist = useAppWaitlist()
+  const cancelWaitlist = useAppCancelWaitlist()
   const [cancelling, setCancelling] = useState<AppBooking | null>(null)
+
+  const handleCancelWaitlist = async (id: number) => {
+    try {
+      await cancelWaitlist.mutateAsync({ id })
+      toast.success('已取消候补')
+    } catch (e) {
+      toast.error(appBookingErrorText(e))
+    }
+  }
 
   return (
     <ProtectedLayout>
@@ -106,7 +121,30 @@ export default function BookingsPage() {
           ))}
         </div>
 
-        {isLoading ? (
+        {showWaitlist ? (
+          waitlist.isLoading ? (
+            <p className="text-muted-foreground">加载中...</p>
+          ) : !waitlist.data?.length ? (
+            <p className="text-muted-foreground">暂无候补</p>
+          ) : (
+            <div className="grid gap-3">
+              {waitlist.data.map((w) => (
+                <Card key={w.id}>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-base truncate">{w.course_title}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {new Date(w.session_starts_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{w.location_name} · 候补第 {w.position} 位</p>
+                    </div>
+                    <Button size="sm" variant="outline" disabled={cancelWaitlist.isPending} onClick={() => handleCancelWaitlist(w.id)}>取消候补</Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )
+        ) : isLoading ? (
           <p className="text-muted-foreground">加载中...</p>
         ) : !data?.items.length ? (
           <p className="text-muted-foreground">暂无预约</p>

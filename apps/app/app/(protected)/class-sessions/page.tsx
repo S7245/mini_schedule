@@ -6,6 +6,7 @@ import {
   useAppClassSessions,
   useAppUsableEntitlements,
   useAppCreateBooking,
+  useAppJoinWaitlist,
   appBookingErrorText,
   type AppClassSession,
 } from '@mini-schedule/api/app'
@@ -88,6 +89,16 @@ export default function ClassSessionsPage() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useAppClassSessions(page, 20)
   const [booking, setBooking] = useState<AppClassSession | null>(null)
+  const joinWaitlist = useAppJoinWaitlist()
+
+  const handleJoinWaitlist = async (s: AppClassSession) => {
+    try {
+      await joinWaitlist.mutateAsync({ class_session_id: s.id })
+      toast.success('已加入候补')
+    } catch (e) {
+      toast.error(appBookingErrorText(e))
+    }
+  }
 
   return (
     <ProtectedLayout>
@@ -113,9 +124,13 @@ export default function ClassSessionsPage() {
                         {s.location_name} · {full ? <span className="text-destructive">已满</span> : `剩余 ${remaining}`}
                       </p>
                     </div>
-                    <Button size="sm" disabled={full} onClick={() => setBooking(s)}>
-                      {full ? '已满' : '预约'}
-                    </Button>
+                    {full ? (
+                      <Button size="sm" variant="outline" disabled={joinWaitlist.isPending} onClick={() => handleJoinWaitlist(s)}>
+                        加入候补
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={() => setBooking(s)}>预约</Button>
+                    )}
                   </CardContent>
                 </Card>
               )
