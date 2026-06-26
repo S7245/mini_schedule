@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -91,6 +92,22 @@ export default function ProfilePage() {
             <CardContent className="p-4 space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">手机号</span><span className="text-sm">{data?.phone ?? '未绑定'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">品牌 ID</span><span className="text-sm">{data?.brand_id ?? '-'}</span></div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hub: 我的权益 / 上课记录（blueprint §14.4，折叠进「我的」hub） */}
+        {!editing && (
+          <Card>
+            <CardContent className="p-2">
+              <Link href="/entitlements" className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-3"><span className="text-lg">🎟️</span>我的权益</span>
+                <span className="text-muted-foreground">›</span>
+              </Link>
+              <Link href="/records" className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50">
+                <span className="flex items-center gap-3"><span className="text-lg">📋</span>上课记录</span>
+                <span className="text-muted-foreground">›</span>
+              </Link>
             </CardContent>
           </Card>
         )}
