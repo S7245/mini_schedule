@@ -177,3 +177,9 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 「即将上课」筛 status=booked 含已过期未结束的 booked（后端按 status 非时间）；可加时间分组/过滤。
 - app/admin protected layout 硬导航水合竞态统一加 hasHydrated 门（跨端 FR）；底部导航可改 Next <Link> 走软导航。
 - 微信订阅消息（§7.5）；legacy /courses、/trainings 页随 app_users 退役。
+
+## 2026-06-26 Batch 14b
+- 加入/取消候补共享 mutation isPending 禁整列按钮 → track in-flight id 精确到行。
+- 候补模式 useAppBookings('') 多余拉取 → hook 加 enabled 选项门控。
+- useAppClassSession 详情 hook 仍未被页面用（14a 既有）；预约/候补弹窗可拉 per-session live 容量。
+- C 端候补转正通知（微信订阅消息 §7.5）；上课记录富数据（评价/训练量）。

@@ -194,3 +194,6 @@ AppLoginRequest.brand_id 是 string + 登录页 onSubmit 显式 String(data.bran
 
 ### app `<a href>` 底部导航=硬导航；硬 URL 直达 protected route 水合竞态（既有 FR）
 底部导航是 `<a href>`（非 Next <Link>），点击=整页硬加载。未登录态硬直达 protected route 被 (protected)/layout 守卫瞬时弹 /login（zustand persist 未水合）；已登录(localStorage 有 token)后硬导航正常（useAuthHydrated 门生效）。本批未改（既有 FR）；冒烟用「登录→软跳 dashboard→点导航」验证。
+
+## 2026-06-26 Batch 14b — 零新缺陷
+14b 前端 code-review + 浏览器冒烟零 P0/P1。仅 2 项 P2 polish（转 FR）：① class-sessions/bookings 的 join/cancel 共享 mutation `isPending` 会禁用同列所有「加入候补/取消候补」按钮（防双提交，cosmetic；要精确按行需 track in-flight id，对比 14a BookSessionDialog 因 mutation 在弹窗组件内故无此问题）；② 候补模式 useAppBookings('') 多拉一次未用 bookings（可加 enabled 门）。
