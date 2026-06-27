@@ -8,7 +8,7 @@ import { DashboardPageTemplate } from '@mini-schedule/admin-system/templates/das
 import { PageHeader } from '@mini-schedule/admin-system/components/page-header'
 import { StatCard } from '@mini-schedule/admin-system/components/stat-card'
 import { SectionCard } from '@mini-schedule/admin-system/components/section-card'
-import type { Brand, PageResponse } from '@mini-schedule/types'
+import type { Brand, PageResponse, PlatformPlanDistribution } from '@mini-schedule/types'
 import { adminMessagePreview } from '@/lib/message-center-data'
 import type { MessageCenterItem } from '@mini-schedule/admin-system/models/message-center'
 
@@ -42,6 +42,37 @@ function StatusBars({ brands }: { brands: Brand[] }) {
         </div>
       ))}
       <p className="text-xs text-muted-foreground">状态分布基于当前已加载品牌页，非全平台聚合。</p>
+    </div>
+  )
+}
+
+function PlanDistributionBars({ items }: { items: PlatformPlanDistribution[] }) {
+  if (!items.length) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        暂无付费订阅。品牌订阅后，这里按套餐展示分布（含宽限期）。
+      </p>
+    )
+  }
+  const max = Math.max(...items.map((item) => item.brand_count), 1)
+
+  return (
+    <div className="space-y-4">
+      {items.map((item) => (
+        <div key={item.plan_id} className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-foreground">{item.plan_name}</span>
+            <span className="tabular-nums text-muted-foreground">{item.brand_count}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: item.brand_count > 0 ? `${Math.max(8, (item.brand_count / max) * 100)}%` : '0%' }}
+            />
+          </div>
+        </div>
+      ))}
+      <p className="text-xs text-muted-foreground">按当前付费订阅（active + 宽限期）聚合，全平台口径。</p>
     </div>
   )
 }
@@ -140,6 +171,7 @@ export default function DashboardPage() {
 
   const brands = brandsQuery.data?.items ?? []
   const summary = summaryQuery.data
+  const planDistribution = summary?.plan_distribution ?? []
   const isLoading = brandsQuery.isLoading || adminsQuery.isLoading || summaryQuery.isLoading
   const hasError = brandsQuery.isError || adminsQuery.isError || summaryQuery.isError
 
@@ -171,9 +203,9 @@ export default function DashboardPage() {
             tone={hasError ? 'danger' : 'success'}
           />
           <StatCard
-            label="有效订阅"
+            label="付费品牌"
             value={isLoading ? '--' : formatCount(summary?.active_subscription_total)}
-            hint={`7 天内到期 ${formatCount(summary?.expiring_in_7_days_total)}`}
+            hint={`含宽限期 · 7 天内到期 ${formatCount(summary?.expiring_in_7_days_total)}`}
             trend={hasError ? '异常' : '实时'}
             tone={hasError ? 'danger' : 'success'}
           />
@@ -191,10 +223,39 @@ export default function DashboardPage() {
             trend={hasError ? '关注' : '处理'}
             tone={hasError || (summary?.exception_order_total ?? 0) > 0 || (summary?.failed_callback_total ?? 0) > 0 ? 'warning' : 'success'}
           />
+          <StatCard
+            label="本月收入"
+            value={isLoading ? '--' : `¥${summary?.month_paid_amount ?? '0'}`}
+            hint={`今日 ¥${summary?.today_paid_amount ?? '0'}`}
+            trend="本月"
+            tone="success"
+          />
+          <StatCard
+            label="Location 用量"
+            value={isLoading ? '--' : formatCount(summary?.location_total)}
+            hint="全平台门店总量"
+            trend="实时"
+          />
+          <StatCard
+            label="员工席位用量"
+            value={isLoading ? '--' : formatCount(summary?.staff_seat_total)}
+            hint="全平台员工账号总量"
+            trend="实时"
+          />
+          <StatCard
+            label="学员用量"
+            value={isLoading ? '--' : formatCount(summary?.learner_total)}
+            hint="全平台学员档案总量"
+            trend="实时"
+          />
         </div>
       }
       primary={
         <>
+          <SectionCard title="套餐分布" description="按当前付费订阅（含宽限期）统计各平台套餐的品牌数，全平台口径。">
+            <PlanDistributionBars items={planDistribution} />
+          </SectionCard>
+
           <SectionCard title="品牌增长趋势" description="视觉结构先按 dashboard 图表位搭建，后续接入真实时间序列。">
             <TrendPreview />
           </SectionCard>

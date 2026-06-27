@@ -635,17 +635,29 @@ export interface CreateSaaSPlanInput {
   features?: Array<{ feature_code: string; enabled: boolean }>
 }
 
+export interface PlatformPlanDistribution {
+  plan_id: number
+  plan_name: string
+  brand_count: number
+}
+
 export interface PlatformSummary {
   brand_total: number
   pending_brand_total: number
   active_brand_total: number
-  active_subscription_total: number
+  active_subscription_total: number // 付费品牌数：active+grace_period（Batch 17b 决策 3）
   expiring_in_7_days_total: number
   restricted_or_frozen_total: number
   today_order_total: number
   today_paid_amount: string
   exception_order_total: number
   failed_callback_total: number
+  // Batch 17b §15 平台看板补全 5 缺口
+  month_paid_amount: string
+  location_total: number
+  staff_seat_total: number
+  learner_total: number
+  plan_distribution: PlatformPlanDistribution[]
 }
 
 export interface SaaSPlanOrder {
