@@ -39,6 +39,7 @@ const NAV_HREF_PERMISSIONS: Record<string, string> = {
   '/entitlement-products': PERMISSIONS.ENTITLEMENT_VIEW,
   '/bookings': PERMISSIONS.BOOKING_VIEW,
   '/booking-policy': PERMISSIONS.SCHEDULE_VIEW,
+  '/reports': PERMISSIONS.REPORT_VIEW_BASIC,
 }
 
 interface ProtectedLayoutProps {

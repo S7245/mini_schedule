@@ -81,6 +81,9 @@ export const PERMISSIONS = {
   ATTENDANCE_VIEW: 'attendance.view',
   ATTENDANCE_MARK: 'attendance.mark',
   ATTENDANCE_NO_SHOW_CONFIRM: 'attendance.no_show_confirm',
+
+  // 基础运营看板 (Batch 17)
+  REPORT_VIEW_BASIC: 'report.view_basic',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

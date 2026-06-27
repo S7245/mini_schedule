@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   BookOpen,
   Boxes,
   CalendarCheck,
@@ -78,6 +79,11 @@ export const brandNavItems: BackofficeNavItem[] = [
     href: '/bookings',
     label: '预约管理',
     icon: <CalendarCheck className="h-4 w-4" />,
+  },
+  {
+    href: '/reports',
+    label: '报表',
+    icon: <BarChart3 className="h-4 w-4" />,
   },
   {
     href: '/booking-policy',

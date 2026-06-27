@@ -1288,3 +1288,40 @@ export interface PromoteWaitlistInput {
   learner_entitlement_id?: number
   no_entitlement_reason?: string
 }
+
+// Batch 17 — 品牌基础运营看板（§15 品牌看板 11 指标）
+export interface ReportPopularCourse {
+  course_id: number
+  title: string
+  booking_count: number
+}
+
+export interface ReportLocationDistribution {
+  location_id: number
+  name: string
+  session_count: number
+  booking_count: number
+}
+
+export interface ReportInstructorSessions {
+  instructor_profile_id: number
+  name: string
+  session_count: number
+}
+
+export interface BrandReportOverview {
+  bookings_total: number
+  attended_total: number
+  cancelled_total: number
+  no_show_total: number
+  occupancy_rate: number
+  total_capacity: number
+  attended_in_completed: number
+  entitlement_locked_total: number
+  entitlement_consumed_total: number
+  pending_no_show_total: number
+  waitlist_total: number
+  popular_courses: ReportPopularCourse[]
+  location_distribution: ReportLocationDistribution[]
+  instructor_sessions: ReportInstructorSessions[]
+}
