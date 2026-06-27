@@ -56,7 +56,7 @@ export default function ReportsPage() {
   const [toDate, setToDate] = useState('')
   const [locationId, setLocationId] = useState('all')
 
-  const locationsQuery = useBrandLocations(1, 100, 'active')
+  const locationsQuery = useBrandLocations(1, 100, 'active', undefined, canView)
   const locations = locationsQuery.data?.items ?? []
 
   const customReady = range !== 'custom' || (fromDate !== '' && toDate !== '')

@@ -85,10 +85,12 @@ export function useBrandLocations(
   pageSize = 20,
   status: LocationStatus | 'all' = 'all',
   q?: string,
+  enabled = true,
 ) {
   return useQuery<PageResponse<Location>>({
     queryKey: locationQueryKeys.list(page, pageSize, status, q),
     queryFn: () => listLocations({ page, page_size: pageSize, status, q }, true),
+    enabled,
   })
 }
 
