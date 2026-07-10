@@ -183,3 +183,9 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - 候补模式 useAppBookings('') 多余拉取 → hook 加 enabled 选项门控。
 - useAppClassSession 详情 hook 仍未被页面用（14a 既有）；预约/候补弹窗可拉 per-session live 容量。
 - C 端候补转正通知（微信订阅消息 §7.5）；上课记录富数据（评价/训练量）。
+
+## Batch 18（站内通知中心前端）
+
+- **通知列表分页/load-more**：`/notifications` 页固定拉首 50（page_size:50 无分页器），高频品牌用户 >50 条时旧通知不可见。补 load-more / 无限滚动。
+- **废弃 mock /messages 页清理**：顶栏铃铛 + nav 已改指 `/notifications`（真实数据），旧 `/messages`（MessageCenter mock + `lib/message-center-data.ts`）成为孤儿路由（仅直接输 URL 可达）。后续删除。
+- **标记已读粒度**：`markRead.isPending` 全局禁用所有行的「标记已读」按钮（非 per-row）；量大时可 per-row 乐观更新。
