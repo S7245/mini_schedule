@@ -10,8 +10,8 @@ import { getBackofficePageLabel } from '@mini-schedule/admin-system'
 import { ProtectedAppLayout } from '@mini-schedule/admin-system/shell/protected-app-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useUnreadCount } from '@mini-schedule/api/notifications'
 import { brandNavItems } from '@/config/nav'
-import { brandMessageSummary } from '@/lib/message-center-data'
 import { PermissionsProvider, PERMISSIONS, usePermissions } from '@/lib/permissions'
 
 /**
@@ -40,6 +40,7 @@ const NAV_HREF_PERMISSIONS: Record<string, string> = {
   '/bookings': PERMISSIONS.BOOKING_VIEW,
   '/booking-policy': PERMISSIONS.SCHEDULE_VIEW,
   '/reports': PERMISSIONS.REPORT_VIEW_BASIC,
+  '/notifications': PERMISSIONS.NOTIFICATION_VIEW,
 }
 
 interface ProtectedLayoutProps {
@@ -63,6 +64,11 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
   const authHydrated = useAuthHydrated()
   const { has, isLoading: permsLoading } = usePermissions()
   const queryClient = useQueryClient()
+
+  // Batch 18：顶栏通知未读徽标（轮询）。无 notification.view 时不查询。
+  const canViewNotifications = has(PERMISSIONS.NOTIFICATION_VIEW)
+  const unreadQuery = useUnreadCount(canViewNotifications)
+  const unreadCount = unreadQuery.data?.count ?? 0
 
   // Filter nav by permission. While the permission set is still loading we
   // optimistically render the full menu — otherwise the user sees the sidebar
@@ -156,12 +162,14 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
           asChild
           className="relative size-8 rounded-lg shadow-sm"
         >
-          <Link href="/messages">
+          <Link href="/notifications">
             <Inbox className="size-4" />
-            <span className="sr-only">消息中心</span>
-            <span className="absolute -right-1 -top-1 rounded-full border border-background bg-background px-1 text-[10px] font-semibold leading-4 text-foreground">
-              {brandMessageSummary.unread}
-            </span>
+            <span className="sr-only">通知消息</span>
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 rounded-full border border-background bg-background px-1 text-[10px] font-semibold leading-4 text-foreground">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </Link>
         </Button>
       }

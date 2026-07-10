@@ -17,7 +17,6 @@ import {
   UsersRound,
 } from 'lucide-react'
 import type { BackofficeNavItem } from '@mini-schedule/admin-system'
-import { brandMessageSummary } from '@/lib/message-center-data'
 
 export const brandNavItems: BackofficeNavItem[] = [
   {
@@ -96,9 +95,8 @@ export const brandNavItems: BackofficeNavItem[] = [
     icon: <Dumbbell className="h-4 w-4" />,
   },
   {
-    href: '/messages',
-    label: '消息中心',
+    href: '/notifications',
+    label: '通知消息',
     icon: <Inbox className="h-4 w-4" />,
-    badge: String(brandMessageSummary.unread),
   },
 ]

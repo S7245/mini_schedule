@@ -84,6 +84,10 @@ export const PERMISSIONS = {
 
   // 基础运营看板 (Batch 17)
   REPORT_VIEW_BASIC: 'report.view_basic',
+
+  // 站内通知中心 (Batch 18)
+  NOTIFICATION_VIEW: 'notification.view',
+  NOTIFICATION_MARK_READ: 'notification.mark_read',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

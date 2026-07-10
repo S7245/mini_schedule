@@ -30,6 +30,7 @@
     "./booking-policy": "./src/booking-policy.ts",
     "./waitlist": "./src/waitlist.ts",
     "./reports": "./src/reports.ts",
+    "./notifications": "./src/notifications.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {
