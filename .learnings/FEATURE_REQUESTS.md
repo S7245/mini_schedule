@@ -195,3 +195,8 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - ✅ 通知列表分页：Batch 19 Tail-3 加「加载更多」（page_size 递增）。真正的游标/无限滚动可后续。
 - ✅ 清理 mock /messages：Batch 19 Tail-4 删除页 + message-center-data.ts；首页概览接真实 notifications API；抽 lib/notification-format 共享。
 - **仍留**：标记已读 per-row 乐观更新（当前 markRead.isPending 全局禁用所有行按钮）。
+
+## Batch 20/21（前端）
+
+- **订阅 banner 直达续费**：SubscriptionBanner 目前引导「联系平台续期」（无自助续费）；§17.3 自助续费落地后应换成直达按钮。
+- **admin 补偿订单定位**：payments 页加了状态筛选（异常/待支付）；订单量大时可再加品牌/时间筛选 + 分页。
