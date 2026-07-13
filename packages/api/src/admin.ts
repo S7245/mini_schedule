@@ -158,6 +158,29 @@ export function useSaaSPlanOrders(page = 1, pageSize = 20, filters: { status?: s
   })
 }
 
+export interface CompensateOrderResult {
+  order_id: number
+  brand_id: number
+  subscription_id: number
+  already_paid: boolean
+}
+
+// 平台 admin 人工补偿卡单开通订阅（Batch 20）。
+export function useCompensateOrder() {
+  const queryClient = useQueryClient()
+  return useMutation<CompensateOrderResult, Error, { id: string; reason: string }>({
+    mutationFn: ({ id, reason }) =>
+      http.post<CompensateOrderResult>(
+        `/api/v1/admin/saas-plan-orders/${id}/compensate`,
+        { reason },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['saas-plan-orders'] })
+      queryClient.invalidateQueries({ queryKey: ['brand-subscriptions'] })
+    },
+  })
+}
+
 export function useBrandSubscriptions(page = 1, pageSize = 20, filters: { status?: string; brand_id?: string } = {}) {
   return useQuery<PageResponse<BrandSubscription>>({
     queryKey: ['brand-subscriptions', page, pageSize, filters],

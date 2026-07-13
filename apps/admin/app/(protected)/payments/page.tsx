@@ -1,8 +1,26 @@
 'use client'
 
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { AlertTriangle, CheckCircle2, Clock3 } from 'lucide-react'
-import { usePaymentCallbackLogs, usePaymentTransactions, useSaaSPlanOrders } from '@mini-schedule/api/admin'
+import {
+  usePaymentCallbackLogs,
+  usePaymentTransactions,
+  useSaaSPlanOrders,
+  useCompensateOrder,
+} from '@mini-schedule/api/admin'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { DataTable } from '@mini-schedule/admin-system/components/data-table'
 import { EmptyState } from '@mini-schedule/admin-system/components/empty-state'
 import { LoadingState } from '@mini-schedule/admin-system/components/loading-state'
@@ -26,6 +44,72 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString('zh-CN')
 }
 
+// 卡单（未支付 / 异常）可人工补偿开通订阅。
+function CompensateAction({ order }: { order: SaaSPlanOrder }) {
+  const [open, setOpen] = useState(false)
+  const [reason, setReason] = useState('')
+  const compensate = useCompensateOrder()
+
+  const eligible = order.status === 'pending_payment' || order.status === 'exception'
+  if (!eligible) return <span className="text-xs text-muted-foreground">-</span>
+
+  const submit = () => {
+    const r = reason.trim()
+    if (!r) {
+      toast.error('请填写补偿原因')
+      return
+    }
+    compensate.mutate(
+      { id: order.id, reason: r },
+      {
+        onSuccess: (res) => {
+          toast.success(
+            res.already_paid
+              ? '订单已是已支付状态，无需重复补偿'
+              : `补偿成功，已开通订阅 #${res.subscription_id}`,
+          )
+          setOpen(false)
+          setReason('')
+        },
+      },
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          补偿开通
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>人工补偿开通订阅</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            订单 <span className="font-mono">{order.out_trade_no}</span>（Brand #{order.brand_id} · ¥{order.amount}）。
+            核实付款已到账后，将按订单套餐开通订阅并激活品牌。
+          </p>
+          <Textarea
+            placeholder="补偿原因（如：已核实银行到账 / 客服工单号）"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="ghost">取消</Button>
+          </DialogClose>
+          <Button onClick={submit} disabled={compensate.isPending}>
+            {compensate.isPending ? '提交中…' : '确认补偿'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function OrderTable({ orders, isLoading }: { orders: SaaSPlanOrder[]; isLoading: boolean }) {
   if (isLoading) return <LoadingState title="正在加载订单" />
   if (!orders.length) return <EmptyState title="暂无套餐订单" description="品牌自助购买或人工补偿后，这里会出现订单记录。" />
@@ -41,6 +125,7 @@ function OrderTable({ orders, isLoading }: { orders: SaaSPlanOrder[]; isLoading:
             <TableHead>金额</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>创建时间</TableHead>
+            <TableHead>操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -60,6 +145,9 @@ function OrderTable({ orders, isLoading }: { orders: SaaSPlanOrder[]; isLoading:
                 <StatusBadge label={order.status} tone={orderStatusTone[order.status] ?? 'neutral'} />
               </TableCell>
               <TableCell>{formatDate(order.created_at)}</TableCell>
+              <TableCell>
+                <CompensateAction order={order} />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
