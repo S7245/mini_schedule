@@ -21,7 +21,7 @@ import { PERMISSIONS, usePermissions } from '@/lib/permissions'
 import {
   notificationEventLabel,
   formatNotificationTime,
-} from '@/lib/notification-format'
+} from '@mini-schedule/core/notifications'
 
 const FILTERS: { value: NotificationStatusFilter; label: string }[] = [
   { value: 'all', label: '全部' },

@@ -226,6 +226,9 @@ importers:
       '@mini-schedule/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@mini-schedule/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@mini-schedule/types':
         specifier: workspace:*
         version: link:../../packages/types

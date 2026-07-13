@@ -13,7 +13,7 @@ import { ProtectedLayout } from '@/components/layout/protected-layout'
 import {
   notificationEventLabel,
   formatNotificationTime,
-} from '@/lib/notification-format'
+} from '@mini-schedule/core/notifications'
 import {
   ONBOARDING_STEP_KEYS,
   ONBOARDING_STEP_LABELS,
