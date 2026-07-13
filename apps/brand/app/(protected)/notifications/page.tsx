@@ -25,6 +25,8 @@ const EVENT_LABELS: Record<string, string> = {
   waitlist_changed: '候补变化',
   attendance_pending_noshow: '待确认爽约',
   session_cancelled: '场次取消',
+  quota_near_limit: '额度已达上限',
+  subscription_abnormal: '订阅受限',
 }
 
 const FILTERS: { value: NotificationStatusFilter; label: string }[] = [
