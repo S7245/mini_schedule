@@ -18,33 +18,16 @@ import {
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { PERMISSIONS, usePermissions } from '@/lib/permissions'
-
-const EVENT_LABELS: Record<string, string> = {
-  booking_created: '新预约',
-  booking_cancelled: '预约取消',
-  waitlist_changed: '候补变化',
-  attendance_pending_noshow: '待确认爽约',
-  session_cancelled: '场次取消',
-  quota_near_limit: '额度已达上限',
-  subscription_abnormal: '订阅受限',
-}
+import {
+  notificationEventLabel,
+  formatNotificationTime,
+} from '@/lib/notification-format'
 
 const FILTERS: { value: NotificationStatusFilter; label: string }[] = [
   { value: 'all', label: '全部' },
   { value: 'unread', label: '未读' },
   { value: 'read', label: '已读' },
 ]
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function NotificationRow({
   item,
@@ -69,7 +52,7 @@ function NotificationRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-            {EVENT_LABELS[item.event_type] ?? item.event_type}
+            {notificationEventLabel(item.event_type)}
           </span>
           <span className={`text-sm ${unread ? 'font-semibold' : 'font-medium'}`}>
             {item.title}
@@ -81,7 +64,7 @@ function NotificationRow({
           </p>
         )}
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {formatTime(item.created_at)}
+          {formatNotificationTime(item.created_at)}
         </p>
       </div>
       {unread && canMark && (
@@ -104,12 +87,19 @@ export default function NotificationsPage() {
   const canMark = has(PERMISSIONS.NOTIFICATION_MARK_READ)
 
   const [filter, setFilter] = useState<NotificationStatusFilter>('all')
-  const { data, isLoading, isError } = useNotifications(
-    { status: filter, page: 1, page_size: 50 },
+  const [limit, setLimit] = useState(20)
+  const { data, isLoading, isError, isFetching } = useNotifications(
+    { status: filter, page: 1, page_size: limit },
     canView,
   )
   const markRead = useMarkNotificationRead()
   const markAll = useMarkAllNotificationsRead()
+
+  // 切换筛选时重置到首屏。
+  function changeFilter(next: NotificationStatusFilter) {
+    setFilter(next)
+    setLimit(20)
+  }
 
   if (!permsLoading && !canView) {
     return (
@@ -161,7 +151,7 @@ export default function NotificationsPage() {
             key={f.value}
             variant={filter === f.value ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => setFilter(f.value)}
+            onClick={() => changeFilter(f.value)}
           >
             {f.label}
           </Button>
@@ -195,6 +185,19 @@ export default function NotificationsPage() {
           )}
         </CardContent>
       </Card>
+
+      {items.length < (data?.total ?? 0) && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isFetching}
+            onClick={() => setLimit((l) => l + 20)}
+          >
+            {isFetching ? '加载中…' : '加载更多'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

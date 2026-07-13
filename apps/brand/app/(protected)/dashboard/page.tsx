@@ -1,17 +1,23 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowUpRight, Inbox, Rocket } from 'lucide-react'
+import { ArrowUpRight, Rocket } from 'lucide-react'
 import { useBrandOnboardingStatus } from '@mini-schedule/api/onboarding'
+import {
+  useUnreadCount,
+  useNotifications,
+} from '@mini-schedule/api/notifications'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProtectedLayout } from '@/components/layout/protected-layout'
-import { brandMessagePreview, brandMessageSummary } from '@/lib/message-center-data'
+import {
+  notificationEventLabel,
+  formatNotificationTime,
+} from '@/lib/notification-format'
 import {
   ONBOARDING_STEP_KEYS,
   ONBOARDING_STEP_LABELS,
 } from '@/components/onboarding/wizard-shell'
-import type { MessageCenterItem } from '@mini-schedule/admin-system/models/message-center'
 
 function OnboardingProgressCard() {
   const { data } = useBrandOnboardingStatus()
@@ -60,6 +66,11 @@ function OnboardingProgressCard() {
 }
 
 export default function DashboardPage() {
+  const unreadQuery = useUnreadCount()
+  const recentQuery = useNotifications({ status: 'all', page: 1, page_size: 5 })
+  const unread = unreadQuery.data?.count ?? 0
+  const recent = recentQuery.data?.items ?? []
+
   return (
     <ProtectedLayout>
       <div className="p-8">
@@ -88,26 +99,26 @@ export default function DashboardPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground">未读消息</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">未读通知</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{brandMessageSummary.unread}</p>
-              <p className="text-xs text-muted-foreground mt-1">来自学员、课程和系统提醒</p>
+              <p className="text-3xl font-bold">{unread}</p>
+              <p className="text-xs text-muted-foreground mt-1">来自预约、场次和订阅提醒</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="mt-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>待处理消息</CardTitle>
+                <CardTitle>最近通知</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  把学员咨询和训练提醒拉回首页，方便品牌管理员直接进入消息中心。
+                  预约、候补、场次与订阅的后台站内通知。
                 </p>
               </div>
               <Link
-                href="/messages"
+                href="/notifications"
                 className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
               >
                 查看全部
@@ -115,53 +126,35 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent className="space-y-3">
-              {brandMessagePreview.map((message: MessageCenterItem) => (
-                <div
-                  key={message.id}
-                  className="rounded-md border border-border bg-background px-3 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{message.title}</p>
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {message.sender} · {message.sourceLabel}
-                      </p>
+              {recent.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  暂无通知
+                </p>
+              ) : (
+                recent.map((n) => (
+                  <div
+                    key={n.id}
+                    className="rounded-md border border-border bg-background px-3 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{n.title}</p>
+                        {n.body && (
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {n.body}
+                          </p>
+                        )}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        {notificationEventLabel(n.event_type)}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                      {message.status === 'resolved' ? '已解决' : '待处理'}
-                    </span>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {formatNotificationTime(n.created_at)}
+                    </p>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Inbox className="size-4 text-primary" />
-                消息节奏
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <div className="flex items-center justify-between">
-                <span>待回复</span>
-                <span className="font-medium text-foreground">
-                  {brandMessageSummary.active}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>高优先级</span>
-                <span className="font-medium text-foreground">
-                  {brandMessageSummary.highPriority}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>已安排跟进</span>
-                <span className="font-medium text-foreground">
-                  {brandMessageSummary.scheduled}
-                </span>
-              </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
