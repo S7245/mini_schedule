@@ -8,6 +8,7 @@ export const NOTIFICATION_EVENT_LABELS: Record<string, string> = {
   session_cancelled: '场次取消',
   quota_near_limit: '额度已达上限',
   subscription_abnormal: '订阅受限',
+  subscription_expiring: '订阅即将到期',
 }
 
 export function notificationEventLabel(eventType: string): string {
