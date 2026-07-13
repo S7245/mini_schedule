@@ -228,8 +228,16 @@ function CallbackTable({ callbacks, isLoading }: { callbacks: PaymentCallbackLog
   )
 }
 
+const ORDER_STATUS_FILTERS: { value: string; label: string }[] = [
+  { value: '', label: '全部' },
+  { value: 'exception', label: '异常' },
+  { value: 'pending_payment', label: '待支付' },
+  { value: 'paid', label: '已支付' },
+]
+
 export default function PaymentsPage() {
-  const ordersQuery = useSaaSPlanOrders(1, 10)
+  const [orderStatus, setOrderStatus] = useState('')
+  const ordersQuery = useSaaSPlanOrders(1, 20, orderStatus ? { status: orderStatus } : {})
   const transactionsQuery = usePaymentTransactions(1, 10)
   const callbacksQuery = usePaymentCallbackLogs(1, 10)
 
@@ -262,6 +270,18 @@ export default function PaymentsPage() {
       </div>
 
       <SectionCard title="套餐订单">
+        <div className="mb-3 flex gap-1">
+          {ORDER_STATUS_FILTERS.map((f) => (
+            <Button
+              key={f.value || 'all'}
+              variant={orderStatus === f.value ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setOrderStatus(f.value)}
+            >
+              {f.label}
+            </Button>
+          ))}
+        </div>
         <OrderTable orders={ordersQuery.data?.items ?? []} isLoading={ordersQuery.isLoading} />
       </SectionCard>
       <SectionCard title="支付流水">
