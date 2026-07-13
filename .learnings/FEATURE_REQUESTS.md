@@ -189,3 +189,9 @@ Batch 7（自定义角色 UI）post-impl code-review。1 项已当批修掉（co
 - **通知列表分页/load-more**：`/notifications` 页固定拉首 50（page_size:50 无分页器），高频品牌用户 >50 条时旧通知不可见。补 load-more / 无限滚动。
 - **废弃 mock /messages 页清理**：顶栏铃铛 + nav 已改指 `/notifications`（真实数据），旧 `/messages`（MessageCenter mock + `lib/message-center-data.ts`）成为孤儿路由（仅直接输 URL 可达）。后续删除。
 - **标记已读粒度**：`markRead.isPending` 全局禁用所有行的「标记已读」按钮（非 per-row）；量大时可 per-row 乐观更新。
+
+## Batch 19（Batch 18 前端 FR 收尾）
+
+- ✅ 通知列表分页：Batch 19 Tail-3 加「加载更多」（page_size 递增）。真正的游标/无限滚动可后续。
+- ✅ 清理 mock /messages：Batch 19 Tail-4 删除页 + message-center-data.ts；首页概览接真实 notifications API；抽 lib/notification-format 共享。
+- **仍留**：标记已读 per-row 乐观更新（当前 markRead.isPending 全局禁用所有行按钮）。
