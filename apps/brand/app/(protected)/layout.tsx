@@ -11,6 +11,7 @@ import { ProtectedAppLayout } from '@mini-schedule/admin-system/shell/protected-
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUnreadCount } from '@mini-schedule/api/notifications'
+import { SubscriptionBanner } from '@/components/subscription-banner'
 import { brandNavItems } from '@/config/nav'
 import { PermissionsProvider, PERMISSIONS, usePermissions } from '@/lib/permissions'
 
@@ -185,6 +186,7 @@ function ProtectedLayoutInner({ children }: ProtectedLayoutProps) {
         router.refresh()
       }}
     >
+      <SubscriptionBanner />
       {children}
     </ProtectedAppLayout>
   )

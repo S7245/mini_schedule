@@ -31,6 +31,7 @@
     "./waitlist": "./src/waitlist.ts",
     "./reports": "./src/reports.ts",
     "./notifications": "./src/notifications.ts",
+    "./subscription": "./src/subscription.ts",
     "./me": "./src/me.ts"
   },
   "scripts": {
