@@ -21,7 +21,7 @@ export interface ApiEnvelope<T> {
 }
 
 export interface HttpRequest {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   path: string
   body?: unknown
   headers?: Record<string, string>
