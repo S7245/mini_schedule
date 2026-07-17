@@ -31,3 +31,19 @@ export interface HttpRequest {
 export interface HttpClient {
   request<T>(req: HttpRequest): Promise<ApiEnvelope<T>>
 }
+
+// 轻提示端口。Web=sonner、Taro=Taro.showToast、RN=Toast 库，各端各实现。
+export interface Notifier {
+  showToast(message: string, kind?: 'success' | 'error' | 'info'): void
+}
+
+// AuthTokenStore 的通用组合实现（各端只需提供 KeyValueStorage）。
+export function createAuthTokenStore(storage: KeyValueStorage, key = 'ms-access-token'): AuthTokenStore {
+  return {
+    getAccessToken: () => storage.get(key),
+    setAccessToken: async (token) => {
+      if (token === null) await storage.remove(key)
+      else await storage.set(key, token)
+    },
+  }
+}
