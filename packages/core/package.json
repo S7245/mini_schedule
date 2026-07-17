@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
+    "./client": "./src/client.ts",
     "./errors": "./src/errors.ts",
     "./notifications": "./src/notifications.ts",
     "./ports": "./src/ports.ts"
