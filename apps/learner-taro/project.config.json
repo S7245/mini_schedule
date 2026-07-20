@@ -1,0 +1,12 @@
+{
+  "miniprogramRoot": "dist/weapp/",
+  "projectname": "mini-schedule-learner",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "setting": {
+    "urlCheck": false,
+    "es6": false,
+    "postcss": false,
+    "minified": false
+  }
+}
