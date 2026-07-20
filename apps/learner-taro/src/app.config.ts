@@ -1,5 +1,5 @@
 export default {
-  pages: ['pages/home/index'],
+  pages: ['pages/login/index', 'pages/home/index'],
   window: {
     navigationBarTitleText: '课程预约',
     navigationBarBackgroundColor: '#ffffff',

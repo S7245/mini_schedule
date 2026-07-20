@@ -1,0 +1,5 @@
+.page { display: flex; flex-direction: column; gap: 24px; padding: 48px 32px; }
+.title { font-size: 40px; font-weight: 600; }
+.input { border: 1px solid #ddd; border-radius: 8px; padding: 16px; }
+.btn { margin-top: 8px; }
+.btn-primary { background: #10b981; color: #fff; }
